@@ -32,8 +32,9 @@
     .inventory {
       max-height: 400px;
       overflow-y: auto;
-      width: 30%;
+      width: 35%; /* Increased width */
       margin-right: 20px; /* Space between the inventory and planet display */
+      max-width: 500px; /* Limit width to avoid stretching too much */
     }
     table {
       margin-top: 30px;
@@ -41,7 +42,7 @@
       width: 100%;
     }
     th, td {
-      padding: 8px;
+      padding: 12px; /* Increased padding for larger cells */
       border: 1px solid #00ffcc;
       text-align: center;
     }
@@ -64,8 +65,24 @@
     .content-container {
       display: flex;
       justify-content: space-between;
-      width: 80%; /* Add width to the whole content area */
+      width: 85%; /* Wider content container */
       margin-left: 20px; /* Shift everything a bit to the right */
+    }
+    .highlight {
+      background-color: yellow;
+      color: black;
+    }
+    .highlight-red {
+      background-color: red;
+      color: white;
+    }
+    .highlight-blue {
+      background-color: blue;
+      color: white;
+    }
+    .highlight-green {
+      background-color: green;
+      color: white;
     }
   </style>
 </head>
@@ -84,6 +101,7 @@
             <th>Planet</th>
             <th>Rarity</th>
             <th>Odds</th>
+            <th>Quantity</th>
             <th>Action</th>
           </tr>
         </thead>
@@ -116,10 +134,18 @@
         "HD 69830b", "HD 69830d", "HD 189733b", "HD 209458b", "CoRoT-7b",
         "CoRoT-7c", "GJ 1214b", "HAT-P-11b", "HAT-P-26b", "HAT-P-7b",
         "Kepler-5b", "Kepler-6b", "Kepler-7b", "Kepler-8b", "Kepler-9b",
-        "Kepler-9c", "Kepler-10b", "Kepler-11b", "Kepler-11c", "Kepler-11d"
+        "Kepler-9c", "Kepler-10b", "Kepler-11b", "Kepler-11c", "Kepler-11d",
+        
+        // New planets with over 1/1000 chance:
+        ...Array.from({ length: 100 }, (_, i) => `Planet-X-${i + 1}`)
       ];
 
-      const weights = planets.map((_, index) => 1 / (5 + index));
+      const weights = [
+        ...planets.slice(0, 50).map((_, index) => 1 / (5 + index)), // Higher chance for first 50 planets
+        ...planets.slice(50, 150).map((_, index) => 1 / (100 + index)), // Lower chance for next 100 planets
+        ...Array.from({ length: 100 }, () => 1 / 1000)  // Over 1/1000 chance for Planet-X planets
+      ];
+
       const totalWeight = weights.reduce((a, b) => a + b, 0);
 
       function weightedRandom() {
@@ -133,11 +159,11 @@
       }
 
       function getRarity(index) {
-        if (index < 20) return "Common";
-        if (index < 40) return "Uncommon";
-        if (index < 60) return "Rare";
-        if (index < 80) return "Epic";
-        return "Legendary";
+        if (index >= 150) return "Legendary"; // Planet-X planets are "Legendary"
+        if (index < 20) return "Epic";
+        if (index < 40) return "Rare";
+        if (index < 60) return "Uncommon";
+        return "Common";
       }
 
       function getOdds(index) {
@@ -149,7 +175,6 @@
       const display = document.getElementById("planetDisplay");
       const planetTable = document.getElementById("planetTable").getElementsByTagName('tbody')[0];
 
-      // Inventory array
       let inventory = [];
 
       function updatePlanet() {
@@ -157,41 +182,63 @@
         const planet = planets[index];
         const rarity = getRarity(index);
         const odds = getOdds(index);
-        display.textContent = `🪐 Currently Viewing: ${planet} [${rarity}, odds: ${odds}]`;
 
-        // Add the planet to the inventory automatically
-        inventory.push({ planet, rarity, odds });
+        let planetText = `🪐 Currently Viewing: ${planet} [${rarity}, odds: ${odds}]`;
 
-        // Render the inventory table
+        // Highlight logic based on rarity
+        let highlightClass = '';
+        if (rarity === "Legendary") {
+          highlightClass = "highlight-red"; // Red for legendary
+        } else if (rarity === "Epic") {
+          highlightClass = "highlight-blue"; // Blue for epic
+        } else if (rarity === "Rare") {
+          highlightClass = "highlight-green"; // Green for rare
+        } else if (weights[index] < 0.01) {
+          highlightClass = "highlight"; // Yellow for common
+        }
+
+        planetText = `<span class="${highlightClass}">${planetText}</span>`;
+
+        display.innerHTML = planetText;
+
+        const existingPlanet = inventory.find(item => item.planet === planet);
+        if (existingPlanet) {
+          existingPlanet.quantity += 1;
+        } else {
+          inventory.push({ planet, rarity, odds, quantity: 1 });
+        }
+
         renderInventory();
       }
 
-      // Render the inventory in a table
       function renderInventory() {
-        // Clear current table rows
+        // Sort inventory based on rarity
+        inventory.sort((a, b) => {
+          const rarityOrder = { "Legendary": 4, "Epic": 3, "Rare": 2, "Uncommon": 1, "Common": 0 };
+          return rarityOrder[b.rarity] - rarityOrder[a.rarity]; // Descending order
+        });
+
         planetTable.innerHTML = "";
 
-        // Add inventory planets to the table
         inventory.forEach((item, index) => {
-          const row = planetTable.insertRow();
+          row = planetTable.insertRow();
           row.innerHTML = `
             <td>${item.planet}</td>
-            <td>${item.rarity}</td>
+            <td class="highlight-${item.rarity.toLowerCase()}">${item.rarity}</td>
             <td>${item.odds}</td>
+            <td>${item.quantity}</td>
             <td><button onclick="removePlanet(${index})">Remove</button></td>
           `;
         });
       }
 
-      // Remove a planet from the inventory
       function removePlanet(index) {
         inventory.splice(index, 1);
-        renderInventory(); // Update the table after removal
+        renderInventory();
       }
 
-      // Initialize display and table
       setInterval(updatePlanet, 500);
-      updatePlanet(); // initial planet to display
+      updatePlanet();
     };
   </script>
 
