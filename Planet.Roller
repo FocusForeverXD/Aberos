@@ -2,90 +2,197 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Weighted Planet Roll</title>
+  <title>🌠 Planet Roll Inventory</title>
   <style>
     body {
-      font-family: Arial, sans-serif;
+      font-family: 'Segoe UI', sans-serif;
       background: #0b0f1a;
       color: #00ffcc;
       display: flex;
-      flex-direction: column;
-      align-items: center;
       justify-content: center;
+      align-items: center;
       height: 100vh;
+      padding-left: 20px; /* Add padding to shift everything right */
+    }
+    h1 {
+      font-size: 2rem;
+      margin-bottom: 10px;
     }
     .planet-display {
-      font-size: 2rem;
+      font-size: 1.6rem;
       padding: 20px;
       border: 2px solid #00ffcc;
-      border-radius: 10px;
+      border-radius: 12px;
       margin-top: 20px;
       background-color: #111;
       box-shadow: 0 0 15px #00ffcc88;
+      text-align: center;
+      width: 50%; /* Adjust the width */
+    }
+    .inventory {
+      max-height: 400px;
+      overflow-y: auto;
+      width: 30%;
+      margin-right: 20px; /* Space between the inventory and planet display */
+    }
+    table {
+      margin-top: 30px;
+      border-collapse: collapse;
+      width: 100%;
+    }
+    th, td {
+      padding: 8px;
+      border: 1px solid #00ffcc;
+      text-align: center;
+    }
+    th {
+      background-color: #111;
+    }
+    button {
+      background-color: #00ffcc;
+      color: black;
+      padding: 10px 15px;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      margin-top: 15px;
+      width: 100%;
+    }
+    button:hover {
+      background-color: #00cc99;
+    }
+    .content-container {
+      display: flex;
+      justify-content: space-between;
+      width: 80%; /* Add width to the whole content area */
+      margin-left: 20px; /* Shift everything a bit to the right */
     }
   </style>
 </head>
 <body>
 
-  <h1>🌌 Weighted Planet Roll</h1>
-  <div class="planet-display" id="planetDisplay">Loading...</div>
+  <h1>🌌 Weighted Planet Viewer & Inventory</h1>
+
+  <div class="content-container">
+    <div class="planet-display" id="planetDisplay">Loading...</div>
+
+    <div class="inventory" id="planetInventory">
+      <h2>🌍 Planet Inventory</h2>
+      <table id="planetTable">
+        <thead>
+          <tr>
+            <th>Planet</th>
+            <th>Rarity</th>
+            <th>Odds</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- Dynamic content will be injected here -->
+        </tbody>
+      </table>
+    </div>
+  </div>
 
   <script>
-    const planets = [
-      "Kepler-22b", "Kepler-452b", "Kepler-186f", "Proxima Centauri b", "TRAPPIST-1d",
-      "TRAPPIST-1e", "TRAPPIST-1f", "TRAPPIST-1g", "TRAPPIST-1h", "HD 40307g",
-      "Gliese 581g", "Gliese 667 Cc", "Gliese 581d", "Kepler-438b", "Kepler-442b",
-      "Tau Ceti e", "Tau Ceti f", "Wolf 1061c", "LHS 1140 b", "Ross 128 b",
-      "K2-18b", "Kepler-62f", "Kepler-69c", "Kepler-62e", "HD 85512b",
-      "GJ 667 Cb", "GJ 667 Cd", "Kepler-1652b", "Kepler-1229b", "Kapteyn b",
-      "Teegarden b", "Teegarden c", "Kepler-442b", "YZ Ceti d", "Kepler-1649c",
-      "GJ 273b", "HD 40307c", "HD 40307d", "HD 40307e", "HD 40307f",
-      "Gliese 876 d", "Gliese 876 c", "Gliese 876 b", "Kepler-10c", "Kepler-20f",
-      "Kepler-20e", "Kepler-22c", "Kepler-69b", "Kepler-62b", "Kepler-186d",
-      "Kepler-186c", "Kepler-62c", "Kepler-442c", "HD 219134b", "HD 219134c",
-      "Kepler-138b", "Kepler-138c", "Kepler-138d", "HD 20794c", "HD 20794d",
-      "HD 10180g", "HD 10180h", "HD 10180b", "HD 10180c", "HD 10180d",
-      "HD 10180e", "HD 10180f", "Kepler-37b", "Kepler-37c", "Kepler-37d",
-      "Luyten b", "55 Cancri e", "55 Cancri f", "55 Cancri d", "55 Cancri c",
-      "GJ 581e", "GJ 581c", "GJ 581b", "GJ 581f", "HD 69830c",
-      "HD 69830b", "HD 69830d", "HD 189733b", "HD 209458b", "CoRoT-7b",
-      "CoRoT-7c", "GJ 1214b", "HAT-P-11b", "HAT-P-26b", "HAT-P-7b",
-      "Kepler-5b", "Kepler-6b", "Kepler-7b", "Kepler-8b", "Kepler-9b",
-      "Kepler-9c", "Kepler-10b", "Kepler-11b", "Kepler-11c", "Kepler-11d"
-    ];
+    window.onload = function() {
+      const planets = [
+        "Kepler-22b", "Kepler-452b", "Kepler-186f", "Proxima Centauri b", "TRAPPIST-1d",
+        "TRAPPIST-1e", "TRAPPIST-1f", "TRAPPIST-1g", "TRAPPIST-1h", "HD 40307g",
+        "Gliese 581g", "Gliese 667 Cc", "Gliese 581d", "Kepler-438b", "Kepler-442b",
+        "Tau Ceti e", "Tau Ceti f", "Wolf 1061c", "LHS 1140 b", "Ross 128 b",
+        "K2-18b", "Kepler-62f", "Kepler-69c", "Kepler-62e", "HD 85512b",
+        "GJ 667 Cb", "GJ 667 Cd", "Kepler-1652b", "Kepler-1229b", "Kapteyn b",
+        "Teegarden b", "Teegarden c", "Kepler-442b", "YZ Ceti d", "Kepler-1649c",
+        "GJ 273b", "HD 40307c", "HD 40307d", "HD 40307e", "HD 40307f",
+        "Gliese 876 d", "Gliese 876 c", "Gliese 876 b", "Kepler-10c", "Kepler-20f",
+        "Kepler-20e", "Kepler-22c", "Kepler-69b", "Kepler-62b", "Kepler-186d",
+        "Kepler-186c", "Kepler-62c", "Kepler-442c", "HD 219134b", "HD 219134c",
+        "Kepler-138b", "Kepler-138c", "Kepler-138d", "HD 20794c", "HD 20794d",
+        "HD 10180g", "HD 10180h", "HD 10180b", "HD 10180c", "HD 10180d",
+        "HD 10180e", "HD 10180f", "Kepler-37b", "Kepler-37c", "Kepler-37d",
+        "Luyten b", "55 Cancri e", "55 Cancri f", "55 Cancri d", "55 Cancri c",
+        "GJ 581e", "GJ 581c", "GJ 581b", "GJ 581f", "HD 69830c",
+        "HD 69830b", "HD 69830d", "HD 189733b", "HD 209458b", "CoRoT-7b",
+        "CoRoT-7c", "GJ 1214b", "HAT-P-11b", "HAT-P-26b", "HAT-P-7b",
+        "Kepler-5b", "Kepler-6b", "Kepler-7b", "Kepler-8b", "Kepler-9b",
+        "Kepler-9c", "Kepler-10b", "Kepler-11b", "Kepler-11c", "Kepler-11d"
+      ];
 
-    const weights = planets.map((_, index) => 1 / (5 + index));
-    const totalWeight = weights.reduce((a, b) => a + b, 0);
+      const weights = planets.map((_, index) => 1 / (5 + index));
+      const totalWeight = weights.reduce((a, b) => a + b, 0);
 
-    function weightedRandom() {
-      const r = Math.random() * totalWeight;
-      let sum = 0;
-      for (let i = 0; i < planets.length; i++) {
-        sum += weights[i];
-        if (r <= sum) return i;
+      function weightedRandom() {
+        const r = Math.random() * totalWeight;
+        let sum = 0;
+        for (let i = 0; i < planets.length; i++) {
+          sum += weights[i];
+          if (r <= sum) return i;
+        }
+        return planets.length - 1;
       }
-      return planets.length - 1;
-    }
 
-    function getRarity(index) {
-      if (index < 20) return "Common";
-      if (index < 40) return "Uncommon";
-      if (index < 60) return "Rare";
-      if (index < 80) return "Epic";
-      return "Legendary";
-    }
+      function getRarity(index) {
+        if (index < 20) return "Common";
+        if (index < 40) return "Uncommon";
+        if (index < 60) return "Rare";
+        if (index < 80) return "Epic";
+        return "Legendary";
+      }
 
-    const display = document.getElementById("planetDisplay");
+      function getOdds(index) {
+        const chance = weights[index] / totalWeight;
+        const oneIn = Math.round(1 / chance);
+        return `1 in ${oneIn}`;
+      }
 
-    function updatePlanet() {
-      const index = weightedRandom();
-      const planet = planets[index];
-      const rarity = getRarity(index);
-      display.textContent = `🪐 Currently Viewing: ${planet} [${rarity}]`;
-    }
+      const display = document.getElementById("planetDisplay");
+      const planetTable = document.getElementById("planetTable").getElementsByTagName('tbody')[0];
 
-    setInterval(updatePlanet, 500);
-    updatePlanet();
+      // Inventory array
+      let inventory = [];
+
+      function updatePlanet() {
+        const index = weightedRandom();
+        const planet = planets[index];
+        const rarity = getRarity(index);
+        const odds = getOdds(index);
+        display.textContent = `🪐 Currently Viewing: ${planet} [${rarity}, odds: ${odds}]`;
+
+        // Add the planet to the inventory automatically
+        inventory.push({ planet, rarity, odds });
+
+        // Render the inventory table
+        renderInventory();
+      }
+
+      // Render the inventory in a table
+      function renderInventory() {
+        // Clear current table rows
+        planetTable.innerHTML = "";
+
+        // Add inventory planets to the table
+        inventory.forEach((item, index) => {
+          const row = planetTable.insertRow();
+          row.innerHTML = `
+            <td>${item.planet}</td>
+            <td>${item.rarity}</td>
+            <td>${item.odds}</td>
+            <td><button onclick="removePlanet(${index})">Remove</button></td>
+          `;
+        });
+      }
+
+      // Remove a planet from the inventory
+      function removePlanet(index) {
+        inventory.splice(index, 1);
+        renderInventory(); // Update the table after removal
+      }
+
+      // Initialize display and table
+      setInterval(updatePlanet, 500);
+      updatePlanet(); // initial planet to display
+    };
   </script>
 
 </body>
