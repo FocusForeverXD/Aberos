@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Weighted Planet Roll</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #0b0f1a;
+      color: #00ffcc;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+    }
+    .planet-display {
+      font-size: 2rem;
+      padding: 20px;
+      border: 2px solid #00ffcc;
+      border-radius: 10px;
+      margin-top: 20px;
+      background-color: #111;
+      box-shadow: 0 0 15px #00ffcc88;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>🌌 Weighted Planet Roll</h1>
+  <div class="planet-display" id="planetDisplay">Loading...</div>
+
+  <script>
+    const planets = [
+      "Kepler-22b", "Kepler-452b", "Kepler-186f", "Proxima Centauri b", "TRAPPIST-1d",
+      "TRAPPIST-1e", "TRAPPIST-1f", "TRAPPIST-1g", "TRAPPIST-1h", "HD 40307g",
+      "Gliese 581g", "Gliese 667 Cc", "Gliese 581d", "Kepler-438b", "Kepler-442b",
+      "Tau Ceti e", "Tau Ceti f", "Wolf 1061c", "LHS 1140 b", "Ross 128 b",
+      "K2-18b", "Kepler-62f", "Kepler-69c", "Kepler-62e", "HD 85512b",
+      "GJ 667 Cb", "GJ 667 Cd", "Kepler-1652b", "Kepler-1229b", "Kapteyn b",
+      "Teegarden b", "Teegarden c", "Kepler-442b", "YZ Ceti d", "Kepler-1649c",
+      "GJ 273b", "HD 40307c", "HD 40307d", "HD 40307e", "HD 40307f",
+      "Gliese 876 d", "Gliese 876 c", "Gliese 876 b", "Kepler-10c", "Kepler-20f",
+      "Kepler-20e", "Kepler-22c", "Kepler-69b", "Kepler-62b", "Kepler-186d",
+      "Kepler-186c", "Kepler-62c", "Kepler-442c", "HD 219134b", "HD 219134c",
+      "Kepler-138b", "Kepler-138c", "Kepler-138d", "HD 20794c", "HD 20794d",
+      "HD 10180g", "HD 10180h", "HD 10180b", "HD 10180c", "HD 10180d",
+      "HD 10180e", "HD 10180f", "Kepler-37b", "Kepler-37c", "Kepler-37d",
+      "Luyten b", "55 Cancri e", "55 Cancri f", "55 Cancri d", "55 Cancri c",
+      "GJ 581e", "GJ 581c", "GJ 581b", "GJ 581f", "HD 69830c",
+      "HD 69830b", "HD 69830d", "HD 189733b", "HD 209458b", "CoRoT-7b",
+      "CoRoT-7c", "GJ 1214b", "HAT-P-11b", "HAT-P-26b", "HAT-P-7b",
+      "Kepler-5b", "Kepler-6b", "Kepler-7b", "Kepler-8b", "Kepler-9b",
+      "Kepler-9c", "Kepler-10b", "Kepler-11b", "Kepler-11c", "Kepler-11d"
+    ];
+
+    const weights = planets.map((_, index) => 1 / (5 + index));
+    const totalWeight = weights.reduce((a, b) => a + b, 0);
+
+    function weightedRandom() {
+      const r = Math.random() * totalWeight;
+      let sum = 0;
+      for (let i = 0; i < planets.length; i++) {
+        sum += weights[i];
+        if (r <= sum) return i;
+      }
+      return planets.length - 1;
+    }
+
+    function getRarity(index) {
+      if (index < 20) return "Common";
+      if (index < 40) return "Uncommon";
+      if (index < 60) return "Rare";
+      if (index < 80) return "Epic";
+      return "Legendary";
+    }
+
+    const display = document.getElementById("planetDisplay");
+
+    function updatePlanet() {
+      const index = weightedRandom();
+      const planet = planets[index];
+      const rarity = getRarity(index);
+      display.textContent = `🪐 Currently Viewing: ${planet} [${rarity}]`;
+    }
+
+    setInterval(updatePlanet, 500);
+    updatePlanet();
+  </script>
+
+</body>
+</html>
