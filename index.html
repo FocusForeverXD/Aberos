@@ -3,194 +3,148 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Blackjack — Customizable</title>
+<title>Blackjack — (Stable)</title>
 <style>
   :root{
     --bg:#071026;
     --card-bg:#ffffff;
     --muted:#9fb0bf;
     --accent:#0ea5a4;
-    --glow: rgba(14,165,164,0.24);
-    --panel: rgba(255,255,255,0.04);
-    --ui-scale: 1;
+    --glow: rgba(14,165,164,0.22);
+    --ui-scale:1;
   }
   *{box-sizing:border-box}
-  html,body{height:100%;margin:0;font-family:Inter,Segoe UI,system-ui,Segoe UI Emoji,Arial;background:radial-gradient(circle at 20% 10%, #0b2f2a 0%, var(--bg) 60%);color:#e6eef6}
-  .wrap{min-height:100vh;padding:20px;display:flex;align-items:flex-start;justify-content:center;gap:18px}
-  .container{width:100%;max-width:1200px;display:grid;grid-template-columns:1fr 360px;gap:18px;transform:scale(var(--ui-scale));transition:transform .18s ease}
-  /* mobile stacking */
-  @media (max-width:940px){.container{grid-template-columns:1fr;max-width:960px}}
-  /* Game Card */
-  .game-card{background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));border-radius:14px;padding:16px;border:1px solid rgba(255,255,255,0.04);box-shadow:0 12px 40px var(--glow)}
-  .topbar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px}
-  .brand{display:flex;gap:12px;align-items:center}
-  .logo{width:52px;height:52px;border-radius:10px;background:linear-gradient(135deg,var(--accent),#6366f1);display:flex;align-items:center;justify-content:center;font-weight:800;color:white;box-shadow:0 6px 18px rgba(0,0,0,0.4)}
-  .title{font-weight:700;font-size:18px}
-  .subtitle{font-size:12px;color:var(--muted)}
-  .bank{background:var(--panel);padding:8px 12px;border-radius:10px;text-align:right;min-width:140px}
-  .bank b{font-size:18px}
-  .table-area{background:linear-gradient(180deg,#073936 0%, #042825 100%);border-radius:10px;padding:14px;border:1px solid rgba(255,255,255,0.03)}
-  .zone{padding:8px;border-radius:8px;background:transparent;min-height:120px;display:flex;flex-direction:column;gap:8px}
-  .hand-row{display:flex;align-items:flex-end;gap:10px;flex-wrap:wrap}
-  .hand-title{font-size:13px;color:var(--muted)}
-  /* cards */
-  .card{width:82px;height:110px;border-radius:10px;background:var(--card-bg);display:flex;flex-direction:column;justify-content:space-between;padding:8px;border:1px solid rgba(10,20,30,0.06);box-shadow:0 12px 30px rgba(2,6,23,0.5);font-weight:700;color:#081018;transform-origin:center bottom;perspective:800px}
-  .card.small{width:64px;height:86px;padding:6px;font-size:13px}
-  .card .top,.card .bot{font-size:14px}
-  .card .suit{font-size:28px;text-align:center}
+  html,body{height:100%;margin:0;font-family:Inter,Segoe UI,system-ui,Arial;background:radial-gradient(circle at 20% 10%, #0b2f2a 0%, var(--bg) 60%);color:#e6eef6}
+  .wrap{min-height:100vh;padding:20px;display:flex;align-items:flex-start;justify-content:center}
+  .container{width:100%;max-width:1100px;display:grid;grid-template-columns:1fr 340px;gap:18px;transform:scale(var(--ui-scale));transition:transform .12s ease}
+  @media (max-width:900px){ .container{grid-template-columns:1fr; } }
+  .cardBox{background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));border-radius:12px;padding:12px;border:1px solid rgba(255,255,255,0.04);box-shadow:0 12px 30px var(--glow)}
+  .top{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+  .logo{width:48px;height:48px;border-radius:10px;background:linear-gradient(135deg,var(--accent),#6366f1);display:flex;align-items:center;justify-content:center;font-weight:700}
+  .tableArea{background:linear-gradient(180deg,#073936 0%, #042825 100%);padding:12px;border-radius:10px}
+  .hand{min-height:110px;padding:8px;border-radius:8px}
+  .handRow{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end}
+  .card{width:78px;height:106px;border-radius:10px;background:var(--card-bg);padding:8px;display:flex;flex-direction:column;justify-content:space-between;border:1px solid rgba(0,0,0,0.06);font-weight:700;color:#081018;transform-origin:center;transition:transform .28s}
+  .card.small{width:62px;height:86px;padding:6px;font-size:13px}
   .card.red{color:#b91c1c}
-  .card.hide{background:linear-gradient(135deg,#253a47,#142c37);color:#cfe8ec;border:1px solid rgba(255,255,255,0.04)}
-  /* flip animation */
-  .card-outer{width:82px;height:110px;perspective:1000px}
-  .card-inner{width:100%;height:100%;transition:transform .6s cubic-bezier(.2,.9,.3,1);transform-style:preserve-3d;position:relative}
-  .card.flip .card-inner{transform:rotateY(180deg)}
-  .card-front,.card-back{position:absolute;inset:0;border-radius:10px;backface-visibility:hidden;display:flex;flex-direction:column;justify-content:space-between;padding:8px}
-  .card-back{transform:rotateY(180deg);background:linear-gradient(135deg,#0d2930,#0b2b2b);color:#d4f3f2;align-items:center}
-  .controls{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
-  button.btn{background:linear-gradient(180deg,var(--accent),#089a95);border:none;padding:10px 14px;border-radius:10px;color:white;font-weight:800;cursor:pointer;box-shadow:0 12px 30px rgba(14,165,164,0.12);transition:transform .12s,box-shadow .12s}
-  button.btn:hover{transform:translateY(-4px)}
-  button.ghost{background:transparent;border:1px solid rgba(255,255,255,0.06);color:var(--muted);padding:8px 12px;border-radius:10px}
-  button.warn{background:linear-gradient(180deg,#f97316,#ef6c00)}
-  button.danger{background:linear-gradient(180deg,#ef4444,#dc2626)}
-  .small-info{font-size:13px;color:var(--muted);margin-top:8px}
-  .center{display:flex;align-items:center;gap:8px}
-  /* sidebar */
+  .card.back{background:linear-gradient(135deg,#243a47,#142c37);color:#cfe8ec}
+  .controls{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+  button.btn{background:linear-gradient(180deg,var(--accent),#089a95);border:none;padding:10px 12px;border-radius:10px;color:white;font-weight:800;cursor:pointer}
+  button.ghost{background:transparent;border:1px solid rgba(255,255,255,0.06);color:var(--muted);padding:8px;border-radius:8px}
   .sidebar{display:flex;flex-direction:column;gap:12px}
-  .panel{background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));padding:12px;border-radius:12px;border:1px solid rgba(255,255,255,0.03)}
-  .panel h4{margin:0 0 8px 0}
-  .history{max-height:240px;overflow:auto;padding-right:6px}
-  .history-item{padding:8px;border-radius:8px;margin-bottom:8px;background:linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.008));display:flex;flex-direction:column;gap:4px;opacity:0;transform:translateY(6px);animation:fadeIn .36s forwards}
-  @keyframes fadeIn{to{opacity:1;transform:none}}
+  .panel{background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));padding:12px;border-radius:10px;border:1px solid rgba(255,255,255,0.03)}
+  .history{max-height:360px;overflow:auto}
+  .history-item{padding:8px;border-radius:8px;margin-bottom:8px;background:linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.008));font-size:13px}
   .outcome-win{color:#6ee7b7;font-weight:800}
   .outcome-lose{color:#fca5a5;font-weight:800}
   .outcome-push{color:#fde68a;font-weight:800}
-  .stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:6px}
-  .chip{background:linear-gradient(180deg,#ffe8b3,#ffd780);padding:8px;border-radius:8px;text-align:center;font-weight:800}
-  /* customization */
-  .controls-row{display:flex;gap:8px;flex-wrap:wrap}
-  input[type=color]{height:36px;width:56px;border-radius:8px;border:none;padding:0;cursor:pointer}
-  input[type=range]{width:100%}
   label.small{font-size:13px;color:var(--muted);display:block;margin-bottom:6px}
-  .preset-btn{padding:8px 10px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);background:transparent;color:var(--muted);cursor:pointer}
-  .preset-btn.active{box-shadow:0 8px 24px rgba(0,0,0,0.4);border-color:rgba(255,255,255,0.08);color:white}
-  footer{margin-top:12px;text-align:center;color:var(--muted);font-size:13px}
-  /* responsive tweaks */
-  @media (max-width:600px){
-    .card{width:64px;height:86px}
-    .card-outer{width:64px;height:86px}
-    .logo{width:44px;height:44px}
-  }
+  input[type=color]{width:56px;height:36px;border-radius:6px;border:none;padding:0}
+  input[type=range]{width:100%}
+  footer{margin-top:8px;color:var(--muted);font-size:13px}
 </style>
 </head>
 <body>
 <div class="wrap">
-  <div class="container">
-    <!-- Left: Game -->
-    <div class="game-card" id="gameCard">
-      <div class="topbar">
-        <div class="brand">
+  <div class="container" id="container">
+    <!-- Game -->
+    <div class="cardBox">
+      <div class="top">
+        <div style="display:flex;gap:12px;align-items:center">
           <div class="logo">BJ</div>
           <div>
-            <div class="title">Blackjack — Web</div>
-            <div class="subtitle">Dealer stands on soft 17 · Double allowed</div>
+            <div style="font-weight:800">Blackjack — Stable</div>
+            <div style="font-size:13px;color:var(--muted)">Dealer stands on soft 17</div>
           </div>
         </div>
-        <div class="bank">
-          <div class="subtitle">Bankroll</div>
-          <div><b id="bankAmount">$1000</b></div>
-          <div class="subtitle small-info" id="roundMsg">Ready</div>
+        <div style="text-align:right">
+          <div style="font-size:13px;color:var(--muted)">Bank</div>
+          <div style="font-weight:800" id="bankAmount">$1000</div>
+          <div id="roundMsg" style="font-size:13px;color:var(--muted)">Ready</div>
         </div>
       </div>
 
-      <div class="table-area">
-        <div class="zone">
-          <div class="hand-title">Dealer</div>
-          <div class="hand-row" id="dealerRow"></div>
-          <div class="small-info">Total: <span id="dealerTotal">—</span></div>
+      <div class="tableArea">
+        <div class="hand">
+          <div style="font-size:13px;color:var(--muted);margin-bottom:6px">Dealer</div>
+          <div class="handRow" id="dealerRow"></div>
+          <div style="margin-top:6px;color:var(--muted)">Total: <span id="dealerTotal">—</span></div>
         </div>
 
-        <div style="height:10px"></div>
+        <div style="height:12px"></div>
 
-        <div class="zone">
-          <div class="hand-title">Player</div>
-          <div class="hand-row" id="playerRow"></div>
-          <div class="small-info">Total: <span id="playerTotal">—</span></div>
+        <div class="hand">
+          <div style="font-size:13px;color:var(--muted);margin-bottom:6px">Player</div>
+          <div class="handRow" id="playerRow"></div>
+          <div style="margin-top:6px;color:var(--muted)">Total: <span id="playerTotal">—</span></div>
         </div>
 
-        <div class="controls" style="margin-top:12px">
-          <button class="btn" id="btnDeal">Deal</button>
-          <button class="btn" id="btnHit" disabled>Hit</button>
-          <button class="btn" id="btnStand" disabled>Stand</button>
-          <button class="btn" id="btnDouble" disabled>Double</button>
-          <button class="ghost" id="btnReset">Reset</button>
+        <div class="controls">
+          <button class="btn" id="dealBtn">Deal</button>
+          <button class="btn" id="hitBtn" disabled>Hit</button>
+          <button class="btn" id="standBtn" disabled>Stand</button>
+          <button class="btn" id="doubleBtn" disabled>Double</button>
+          <button class="ghost" id="resetBtn">Reset</button>
         </div>
 
-        <div class="small-info" style="display:flex;align-items:center;gap:8px;margin-top:12px">
+        <div style="display:flex;gap:10px;align-items:center;margin-top:12px">
           <div style="flex:1">
             <label class="small">Bet</label>
-            <input id="betInput" type="number" min="1" step="1" value="10" style="width:100%;padding:8px;border-radius:8px;background:transparent;border:1px solid rgba(255,255,255,0.04);color:inherit" />
+            <input id="betInput" type="number" min="1" value="10" style="width:100%;padding:8px;border-radius:8px;background:transparent;border:1px solid rgba(255,255,255,0.04);color:inherit">
           </div>
-          <div style="width:120px;text-align:right">
-            <div class="small-info">Preview</div>
-            <div class="chip" id="betPreview">$10</div>
+          <div style="width:110px;text-align:right">
+            <div class="small" style="color:var(--muted)">Preview</div>
+            <div style="background:linear-gradient(180deg,#ffe8b3,#ffd780);padding:8px;border-radius:8px;font-weight:800" id="betPreview">$10</div>
           </div>
         </div>
       </div>
-      <footer>Built with ♥ — Persistent settings & history</footer>
+      <footer>Persistent history & theme</footer>
     </div>
 
-    <!-- Right: Sidebar -->
+    <!-- Sidebar -->
     <div class="sidebar">
       <div class="panel">
-        <h4>History</h4>
-        <div class="history" id="historyList" aria-live="polite"></div>
-        <div class="stat-grid" style="margin-top:8px">
-          <div style="text-align:left"><div class="subtitle">Wins</div><div id="statWins">0</div></div>
-          <div style="text-align:right"><div class="subtitle">Losses</div><div id="statLosses">0</div></div>
-          <div style="text-align:left"><div class="subtitle">Pushes</div><div id="statPushes">0</div></div>
-          <div style="text-align:right"><div class="subtitle">Rounds</div><div id="statRounds">0</div></div>
-        </div>
+        <h4 style="margin:0 0 8px 0">History</h4>
+        <div class="history" id="historyList"></div>
         <div style="display:flex;gap:8px;margin-top:8px">
-          <button class="preset-btn" id="clearHistory">Clear</button>
-          <button class="preset-btn" id="exportHistory">Export</button>
+          <button class="ghost" id="clearHistory">Clear</button>
+          <button class="ghost" id="exportHistory">Export</button>
         </div>
       </div>
 
       <div class="panel">
-        <h4>Customize UI</h4>
+        <h4 style="margin:0 0 8px 0">Customize</h4>
         <div style="margin-bottom:8px">
-          <div class="small-info">Presets</div>
-          <div style="display:flex;gap:8px;margin-top:8px">
-            <button class="preset-btn" data-preset="neon" id="presetNeon">Neon Blue</button>
-            <button class="preset-btn" data-preset="red" id="presetRed">Casino Red</button>
-            <button class="preset-btn" data-preset="green" id="presetGreen">Emerald</button>
-            <button class="preset-btn" data-preset="gold" id="presetGold">Golden</button>
+          <div style="font-size:13px;color:var(--muted);margin-bottom:6px">Presets</div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button class="ghost" id="presetNeon">Neon</button>
+            <button class="ghost" id="presetRed">Red</button>
+            <button class="ghost" id="presetGreen">Green</button>
+            <button class="ghost" id="presetGold">Gold</button>
           </div>
         </div>
 
-        <div style="margin-top:10px">
+        <div style="margin-top:8px">
           <label class="small">Background</label>
-          <div class="controls-row"><input type="color" id="colorBg" /></div>
+          <input type="color" id="bgColor" />
         </div>
-
-        <div style="margin-top:10px">
+        <div style="margin-top:8px">
           <label class="small">Accent</label>
-          <div class="controls-row"><input type="color" id="colorAccent" /></div>
+          <input type="color" id="accentColor" />
         </div>
-
-        <div style="margin-top:10px">
+        <div style="margin-top:8px">
           <label class="small">Glow (alpha)</label>
-          <div class="controls-row"><input type="color" id="colorGlow" /></div>
+          <input type="color" id="glowColor" />
         </div>
-
-        <div style="margin-top:10px">
+        <div style="margin-top:8px">
           <label class="small">UI Scale</label>
-          <div style="display:flex;gap:8px;align-items:center"><input id="scaleRange" type="range" min="0.7" max="1.25" step="0.01" value="1" /><div id="scaleVal">100%</div></div>
+          <input id="scaleRange" type="range" min="0.75" max="1.25" step="0.01" value="1" />
+          <div id="scaleVal">100%</div>
         </div>
 
-        <div style="display:flex;gap:8px;margin-top:10px">
-          <button class="preset-btn" id="saveTheme">Save</button>
-          <button class="preset-btn" id="resetTheme">Reset</button>
+        <div style="display:flex;gap:8px;margin-top:8px">
+          <button class="ghost" id="saveTheme">Save</button>
+          <button class="ghost" id="resetTheme">Reset</button>
         </div>
       </div>
     </div>
@@ -198,327 +152,251 @@
 </div>
 
 <script>
-/* Blackjack with history + theme customization
-   Single-file, mobile-first
-*/
+/* Stable Blackjack simplified implementation with history + simple theme */
+(function(){
+  // DOM refs
+  const dealerRow = document.getElementById('dealerRow');
+  const playerRow = document.getElementById('playerRow');
+  const dealerTotal = document.getElementById('dealerTotal');
+  const playerTotal = document.getElementById('playerTotal');
+  const bankAmountEl = document.getElementById('bankAmount');
+  const roundMsg = document.getElementById('roundMsg');
+  const historyList = document.getElementById('historyList');
+  const betInput = document.getElementById('betInput');
+  const betPreview = document.getElementById('betPreview');
 
-// -- Utilities
-const $ = (q,s=document)=>s.querySelector(q);
-const $$ = (q,s=document)=>Array.from(s.querySelectorAll(q));
+  const dealBtn = document.getElementById('dealBtn');
+  const hitBtn = document.getElementById('hitBtn');
+  const standBtn = document.getElementById('standBtn');
+  const doubleBtn = document.getElementById('doubleBtn');
+  const resetBtn = document.getElementById('resetBtn');
 
-function randShuffle(arr){
-  for(let i=arr.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[arr[i],arr[j]]=[arr[j],arr[i]]}
-}
+  // theme controls
+  const presetNeon = document.getElementById('presetNeon');
+  const presetRed = document.getElementById('presetRed');
+  const presetGreen = document.getElementById('presetGreen');
+  const presetGold = document.getElementById('presetGold');
+  const bgColor = document.getElementById('bgColor');
+  const accentColor = document.getElementById('accentColor');
+  const glowColor = document.getElementById('glowColor');
+  const scaleRange = document.getElementById('scaleRange');
+  const scaleVal = document.getElementById('scaleVal');
+  const saveThemeBtn = document.getElementById('saveTheme');
+  const resetThemeBtn = document.getElementById('resetTheme');
 
-// -- Game state & DOM refs
-const bankEl = $('#bankAmount'), roundMsg = $('#roundMsg');
-const dealerRow = $('#dealerRow'), playerRow = $('#playerRow');
-const dealerTotalEl = $('#dealerTotal'), playerTotalEl = $('#playerTotal');
-const btnDeal = $('#btnDeal'), btnHit = $('#btnHit'), btnStand = $('#btnStand'), btnDouble = $('#btnDouble'), btnReset = $('#btnReset');
-const betInput = $('#betInput'), betPreview = $('#betPreview');
-const historyList = $('#historyList');
-const statWins = $('#statWins'), statLosses = $('#statLosses'), statPushes = $('#statPushes'), statRounds = $('#statRounds');
-const clearHistoryBtn = $('#clearHistory'), exportHistoryBtn = $('#exportHistory');
-// theme controls
-const presetBtns = $$('.preset-btn[data-preset]');
-const presetNeon = $('#presetNeon'), presetRed=$('#presetRed'), presetGreen=$('#presetGreen'), presetGold=$('#presetGold');
-const colorBg = $('#colorBg'), colorAccent = $('#colorAccent'), colorGlow = $('#colorGlow');
-const scaleRange = $('#scaleRange'), scaleVal = $('#scaleVal');
-const saveThemeBtn = $('#saveTheme'), resetThemeBtn = $('#resetTheme');
+  const clearHistoryBtn = document.getElementById('clearHistory');
+  const exportHistoryBtn = document.getElementById('exportHistory');
 
-// data
-const SUITS=['♠','♥','♦','♣'], RANKS=['A','2','3','4','5','6','7','8','9','10','J','Q','K'];
-let deck=[], player=[], dealer=[];
-let inRound=false;
-let bank = Number(localStorage.getItem('bj_bank')) || 1000;
-let stats = JSON.parse(localStorage.getItem('bj_stats') || JSON.stringify({wins:0,losses:0,pushes:0,rounds:0}));
-let history = JSON.parse(localStorage.getItem('bj_history') || '[]');
-let theme = JSON.parse(localStorage.getItem('bj_theme') || '{}');
+  // data
+  const SUITS = ['♠','♥','♦','♣'];
+  const RANKS = ['A','2','3','4','5','6','7','8','9','10','J','Q','K'];
 
-// helper: build deck
-function buildDeck(){
-  const d=[];
-  for(const s of SUITS) for(const r of RANKS) d.push({suit:s,rank:r});
-  randShuffle(d);
-  return d;
-}
-function draw(){ if(deck.length<8){deck=buildDeck(); addHistory('Deck reshuffled')} return deck.pop() }
+  let deck = [];
+  let player = [];
+  let dealer = [];
+  let inRound = false;
+  let bank = Number(localStorage.getItem('bj_bank') || 1000);
+  let history = JSON.parse(localStorage.getItem('bj_history') || '[]');
+  let stats = JSON.parse(localStorage.getItem('bj_stats') || JSON.stringify({wins:0,losses:0,pushes:0,rounds:0}));
+  let theme = JSON.parse(localStorage.getItem('bj_theme') || '{}');
 
-// card value
-function cardVal(c){ if(c.rank==='A') return 11; if(['J','Q','K'].includes(c.rank)) return 10; return Number(c.rank) }
-function bestTotal(hand){
-  let total = hand.reduce((s,c)=>s+cardVal(c),0);
-  let aces = hand.filter(c=>c.rank==='A').length;
-  while(total>21 && aces>0){total-=10;aces--}
-  return total;
-}
-
-// render helpers
-function clearChildren(el){ while(el.firstChild) el.removeChild(el.firstChild) }
-function makeCardEl(card, hidden=false){
-  const outer = document.createElement('div'); outer.className='card-outer';
-  const inner = document.createElement('div'); inner.className='card-inner';
-  const front = document.createElement('div'); front.className='card-front card';
-  const back = document.createElement('div'); back.className='card-back card';
-  // front
-  front.innerHTML = `<div class="top">${card.rank}</div><div class="suit">${card.suit}</div><div class="bot">${card.rank}</div>`;
-  if(card.suit==='♥' || card.suit==='♦') front.classList.add('red');
-  // back
-  back.innerHTML = '<div style="margin:auto;font-size:22px">🂠</div>';
-  inner.appendChild(front); inner.appendChild(back);
-  outer.appendChild(inner);
-  if(hidden){ outer.querySelector('.card-inner').style.transform='rotateY(180deg)'; /* show back */ outer.querySelector('.card-front').style.visibility='hidden' }
-  setTimeout(()=>{ outer.querySelector('.card-inner').style.transform = ''; },40);
-  return outer;
-}
-function renderHands(){
-  clearChildren(dealerRow); clearChildren(playerRow);
-  // dealer: if inRound, hide first card
-  for(let i=0;i<dealer.length;i++){
-    const c = dealer[i];
-    const hide = (i===0 && inRound);
-    const el = makeCardEl(c, hide);
-    dealerRow.appendChild(el);
+  // helpers
+  function buildDeck(){
+    const d = [];
+    for(const s of SUITS) for(const r of RANKS) d.push({suit:s,rank:r});
+    for(let i=d.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[d[i],d[j]]=[d[j],d[i]]}
+    return d;
   }
-  for(const c of player){
-    playerRow.appendChild(makeCardEl(c,false));
+  function draw(){
+    if(deck.length < 8){ deck = buildDeck(); addHistory('Deck reshuffled'); }
+    return deck.pop();
   }
-  dealerTotalEl.textContent = inRound ? (inRound ? '—' : bestTotal(dealer)) : (dealer.length?bestTotal(dealer):'—');
-  playerTotalEl.textContent = player.length?bestTotal(player):'—';
-  bankEl.textContent = '$' + bank.toFixed(2);
-  betPreview.textContent = '$' + Number(betInput.value || 1);
-  updateButtons();
-}
-
-// buttons
-function updateButtons(){
-  btnDeal.disabled = inRound;
-  btnHit.disabled = !inRound;
-  btnStand.disabled = !inRound;
-  btnDouble.disabled = !(inRound && player.length===2 && bank >= Number(betInput.value||1));
-}
-
-// history
-function addHistory(msg, outcome=null){
-  const entry = { t: Date.now(), msg, outcome, player: player.map(c=>c.rank+c.suit), dealer: dealer.map(c=>c.rank+c.suit), pTotal: bestTotal(player), dTotal: bestTotal(dealer) };
-  history.unshift(entry);
-  if(history.length>200) history.pop();
-  localStorage.setItem('bj_history', JSON.stringify(history));
-  renderHistory();
-}
-function renderHistory(){
-  clearChildren(historyList);
-  for(const h of history){
-    const div = document.createElement('div'); div.className='history-item';
-    const row1 = document.createElement('div'); row1.style.display='flex'; row1.style.justifyContent='space-between';
-    const left = document.createElement('div'); left.textContent = new Date(h.t).toLocaleTimeString();
-    const right = document.createElement('div');
-    if(h.outcome==='win') right.innerHTML = `<span class="outcome-win">WIN</span>`;
-    else if(h.outcome==='lose') right.innerHTML = `<span class="outcome-lose">LOSE</span>`;
-    else if(h.outcome==='push') right.innerHTML = `<span class="outcome-push">PUSH</span>`;
-    else right.innerHTML = '';
-    row1.appendChild(left); row1.appendChild(right);
-    const row2 = document.createElement('div'); row2.style.fontSize='13px'; row2.style.color='var(--muted)';
-    row2.textContent = `${h.msg} — P:${h.player.join(' ')} (${h.pTotal}) • D:${h.dealer.join(' ')} (${h.dTotal})`;
-    div.appendChild(row1); div.appendChild(row2);
-    historyList.appendChild(div);
+  function valueOf(c){
+    if(c.rank === 'A') return 11;
+    if(['J','Q','K'].includes(c.rank)) return 10;
+    return Number(c.rank);
   }
-  statWins.textContent = stats.wins; statLosses.textContent = stats.losses; statPushes.textContent = stats.pushes; statRounds.textContent = stats.rounds;
-}
+  function bestTotal(hand){
+    let total = hand.reduce((s,c)=>s+valueOf(c),0);
+    let aces = hand.filter(x=>x.rank==='A').length;
+    while(total>21 && aces>0){ total -= 10; aces--; }
+    return total;
+  }
+  function clearEl(el){ while(el.firstChild) el.removeChild(el.firstChild); }
 
-// game flow
-function startDeal(){
-  if(inRound) return;
-  const bet = Number(betInput.value||1);
-  if(bet<=0) return alert('Bet must be positive');
-  if(bet>bank) return alert('Bet exceeds bankroll');
-  deck = deck.length?deck:buildDeck();
-  player=[]; dealer=[];
-  player.push(draw()); dealer.push(draw()); player.push(draw()); dealer.push(draw());
-  bank -= bet; // stake taken
-  inRound = true; roundMsg.textContent='Your move';
-  renderHands();
-  // immediate BJ checks
-  const pVal = bestTotal(player), dVal = bestTotal(dealer);
-  if(pVal===21 || dVal===21){
-    // reveal
-    inRound=false;
-    renderHands();
-    if(pVal===21 && dVal!==21){
-      const win = Math.round(bet*1.5*100)/100;
-      bank += bet + win; // return stake + 3:2
-      stats.wins++; addHistory('Blackjack!','win'); addHistory(`Blackjack payout +$${win}`);
-      roundMsg.textContent = `Blackjack! You win $${win}`;
-    } else if(dVal===21 && pVal!==21){
-      stats.losses++; addHistory('Dealer blackjack','lose'); roundMsg.textContent='Dealer Blackjack — you lose';
-    } else {
-      // both BJ push
-      bank += bet; stats.pushes++; addHistory('Both blackjack — push','push'); roundMsg.textContent='Push (both Blackjack)';
+  // render
+  function makeCardNode(card, hidden=false){
+    const d = document.createElement('div');
+    d.className = 'card' + (hidden?' back':'');
+    d.style.transform = 'translateY(0)';
+    if(hidden){ d.textContent = '🂠'; return d; }
+    d.innerHTML = '<div style="font-size:14px">'+card.rank+'</div><div style="font-size:22px;line-height:1">'+card.suit+'</div><div style="text-align:right;font-size:14px">'+card.rank+'</div>';
+    if(card.suit==='♥' || card.suit==='♦') d.classList.add('red');
+    return d;
+  }
+
+  function renderHands(){
+    clearEl(dealerRow); clearEl(playerRow);
+    for(let i=0;i<dealer.length;i++){
+      const hide = (i===0 && inRound);
+      dealerRow.appendChild(makeCardNode(dealer[i], hide));
     }
-    stats.rounds++; saveState(); renderHistory(); updateButtons(); renderHands();
-  } else {
+    for(const c of player) playerRow.appendChild(makeCardNode(c,false));
+    dealerTotal.textContent = inRound ? (inRound ? '—' : bestTotal(dealer)) : (dealer.length?bestTotal(dealer):'—');
+    playerTotal.textContent = player.length?bestTotal(player):'—';
+    bankAmountEl.textContent = '$' + bank.toFixed(2);
+    betPreview.textContent = '$' + (Number(betInput.value)||1);
     updateButtons();
   }
-}
-function playerHit(){
-  if(!inRound) return;
-  player.push(draw()); renderHands();
-  if(bestTotal(player)>21){
-    // busted
-    inRound=false; stats.losses++; stats.rounds++;
-    addHistory('Busted','lose');
-    roundMsg.textContent = `Busted (${bestTotal(player)}) — you lose`;
-    saveState(); renderHistory(); updateButtons();
+
+  function updateButtons(){
+    dealBtn.disabled = inRound;
+    hitBtn.disabled = !inRound;
+    standBtn.disabled = !inRound;
+    doubleBtn.disabled = !(inRound && player.length===2 && bank >= Number(betInput.value||1));
   }
-}
-function playerStand(){
-  if(!inRound) return;
-  dealerPlayAndSettle();
-}
-function playerDouble(){
-  if(!inRound) return;
-  if(player.length!==2) return;
-  const bet = Number(betInput.value||1);
-  if(bank < bet) return alert('Not enough bankroll to double');
-  bank -= bet; // match
-  betInput.value = bet*2; // temporarily double visual (we'll handle payouts relative to new stake)
-  player.push(draw()); renderHands();
-  if(bestTotal(player)>21){
-    inRound=false; stats.losses++; stats.rounds++;
-    addHistory('Busted after double','lose');
-    roundMsg.textContent = `Busted (${bestTotal(player)}) — you lose`;
-    saveState(); renderHistory(); updateButtons();
-    // reset betInput for next round
-    setTimeout(()=>{ betInput.value = Math.max(1, parseFloat(betInput.value)/2); renderHands(); }, 400);
-    return;
+
+  // history
+  function addHistory(msg, outcome){
+    const entry = { t: Date.now(), msg: msg, outcome: outcome, player: player.map(c=>c.rank+c.suit), dealer: dealer.map(c=>c.rank+c.suit), pTotal: bestTotal(player), dTotal: bestTotal(dealer) };
+    history.unshift(entry); if(history.length>200) history.pop();
+    localStorage.setItem('bj_history', JSON.stringify(history));
+    renderHistory();
   }
-  dealerPlayAndSettle();
-}
-function dealerPlayAndSettle(){
-  // reveal and dealer hits until 17+. Stand on soft 17 (common).
-  while(bestTotal(dealer) < 17) { dealer.push(draw()); }
-  // determine
-  inRound=false;
-  const pVal = bestTotal(player), dVal = bestTotal(dealer);
-  const stake = Number(betInput.value||1);
-  // payout: when player wins, they get stake*2 (return stake + win). We already subtracted stake(s) earlier.
-  if(dVal>21 || pVal> dVal){
-    bank += stake*2; stats.wins++; addHistory('Win','win'); roundMsg.textContent=`You win ${pVal} vs ${dVal}`;
-  } else if(pVal < dVal){
-    stats.losses++; addHistory('Lose','lose'); roundMsg.textContent=`You lose ${pVal} vs ${dVal}`;
-  } else {
-    bank += stake; stats.pushes++; addHistory('Push','push'); roundMsg.textContent=`Push (${pVal})`;
+  function renderHistory(){
+    clearEl(historyList);
+    for(const h of history){
+      const div = document.createElement('div'); div.className='history-item';
+      const line1 = document.createElement('div'); line1.style.display='flex'; line1.style.justifyContent='space-between';
+      line1.innerHTML = `<div style="color:var(--muted)">${new Date(h.t).toLocaleTimeString()}</div><div>${h.outcome? (h.outcome==='win'?'<span class="outcome-win">WIN</span>':(h.outcome==='lose'?'<span class="outcome-lose">LOSE</span>':'<span class="outcome-push">PUSH</span>')):''}</div>`;
+      const line2 = document.createElement('div'); line2.style.color='var(--muted)'; line2.style.fontSize='13px';
+      line2.textContent = `${h.msg} · P:${h.player.join(' ')} (${h.pTotal}) · D:${h.dealer.join(' ')} (${h.dTotal})`;
+      div.appendChild(line1); div.appendChild(line2); historyList.appendChild(div);
+    }
   }
-  stats.rounds++; saveState(); renderHistory(); updateButtons();
-  // after settle, if player doubled earlier, ensure betInput resets to default guess (user can change)
-  setTimeout(()=>{ betInput.value = Math.max(1, Number(betInput.value)||1); renderHands(); }, 200);
-}
 
-// events wiring
-btnDeal.addEventListener('click', startDeal);
-btnHit.addEventListener('click', playerHit);
-btnStand.addEventListener('click', playerStand);
-btnDouble.addEventListener('click', playerDouble);
-btnReset.addEventListener('click', ()=>{
-  if(confirm('Reset bankroll and stats?')){
-    bank = 1000; stats={wins:0,losses:0,pushes:0,rounds:0}; history=[]; localStorage.removeItem('bj_history'); localStorage.removeItem('bj_bank'); localStorage.removeItem('bj_stats'); saveState(); renderHistory(); renderHands();
+  // game actions
+  function deal(){
+    if(inRound) return;
+    const stake = Number(betInput.value||1);
+    if(stake<1) return alert('Bet must be >= 1');
+    if(stake>bank) return alert('Bet exceeds bankroll');
+    if(!deck.length) deck = buildDeck();
+    player = []; dealer = [];
+    player.push(draw()); dealer.push(draw()); player.push(draw()); dealer.push(draw());
+    bank -= stake; inRound = true; roundMsg.textContent = 'Your move';
+    renderHands();
+    // immediate blackjack check
+    const p = bestTotal(player), d = bestTotal(dealer);
+    if(p===21 || d===21){
+      inRound=false; renderHands();
+      if(p===21 && d!==21){ const win = Math.round(stake*1.5*100)/100; bank += stake + win; addHistory('Blackjack','win'); roundMsg.textContent = `Blackjack! +$${win}`; stats.wins++; }
+      else if(d===21 && p!==21){ addHistory('Dealer Blackjack','lose'); roundMsg.textContent = 'Dealer Blackjack — you lose'; stats.losses++; }
+      else{ bank += stake; addHistory('Both Blackjack — push','push'); roundMsg.textContent = 'Push (both)'; stats.pushes++; }
+      stats.rounds++; saveState(); renderHistory(); updateButtons();
+    }
   }
-});
-betInput.addEventListener('input', ()=>{ betPreview.textContent = '$' + (Number(betInput.value)||1); updateButtons(); });
 
-// history controls
-clearHistoryBtn.addEventListener('click', ()=>{
-  if(confirm('Clear history?')){ history=[]; localStorage.removeItem('bj_history'); renderHistory(); }
-});
-exportHistoryBtn.addEventListener('click', ()=>{
-  const data = JSON.stringify(history, null, 2);
-  navigator.clipboard?.writeText(data).then(()=>alert('History copied to clipboard'), ()=>alert('Failed to copy'));
-});
+  function hit(){
+    if(!inRound) return;
+    player.push(draw()); renderHands();
+    if(bestTotal(player)>21){ inRound=false; addHistory('Busted','lose'); roundMsg.textContent='Busted — you lose'; stats.losses++; stats.rounds++; saveState(); renderHistory(); updateButtons(); }
+  }
 
-// persistence
-function saveState(){
-  localStorage.setItem('bj_bank', String(bank));
-  localStorage.setItem('bj_stats', JSON.stringify(stats));
-  localStorage.setItem('bj_history', JSON.stringify(history));
-  // theme saved separately
-}
-function loadState(){ bank = Number(localStorage.getItem('bj_bank')) || 1000; stats = JSON.parse(localStorage.getItem('bj_stats') || JSON.stringify(stats)); history = JSON.parse(localStorage.getItem('bj_history') || JSON.stringify(history)); }
+  function stand(){
+    if(!inRound) return;
+    // dealer plays
+    while(bestTotal(dealer) < 17) dealer.push(draw());
+    inRound=false;
+    const p = bestTotal(player), d = bestTotal(dealer);
+    const stake = Number(betInput.value||1);
+    if(d>21 || p>d){ bank += stake*2; addHistory('Win','win'); roundMsg.textContent = `You win ${p} vs ${d}`; stats.wins++; }
+    else if(p<d){ addHistory('Lose','lose'); roundMsg.textContent = `You lose ${p} vs ${d}`; stats.losses++; }
+    else{ bank += stake; addHistory('Push','push'); roundMsg.textContent=`Push (${p})`; stats.pushes++; }
+    stats.rounds++; saveState(); renderHistory(); renderHands(); updateButtons();
+  }
 
-// theme handling
-const presets = {
-  neon: { bg:'#071026', accent:'#0ea5a4', glow:'rgba(14,165,164,0.24)' },
-  red: { bg:'#1b0505', accent:'#ef4444', glow:'rgba(239,68,68,0.18)' },
-  green: { bg:'#052014', accent:'#10b981', glow:'rgba(16,185,129,0.18)' },
-  gold: { bg:'#1b1406', accent:'#f59e0b', glow:'rgba(245,158,11,0.14)' }
-};
-function applyTheme(t){
-  if(t.bg) document.documentElement.style.setProperty('--bg', t.bg);
-  if(t.accent) document.documentElement.style.setProperty('--accent', t.accent);
-  if(t.glow) document.documentElement.style.setProperty('--glow', t.glow);
-  // set color pickers if present
-  if(colorBg) colorBg.value = rgbToHex(t.bg || getComputedStyle(document.documentElement).getPropertyValue('--bg'));
-  if(colorAccent) colorAccent.value = rgbToHex(t.accent || getComputedStyle(document.documentElement).getPropertyValue('--accent'));
-  if(colorGlow) colorGlow.value = rgbaToHex(t.glow || getComputedStyle(document.documentElement).getPropertyValue('--glow'));
-  // mark active preset
-  presetBtns.forEach(b=>b.classList.remove('active'));
-  if(t._preset && $('#preset'+capitalize(t._preset))) $('#preset'+capitalize(t._preset)).classList.add('active');
-}
-function rgbToHex(val){
-  try{
-    const d = document.createElement('div'); d.style.color = val; document.body.appendChild(d);
-    const cs = getComputedStyle(d).color; document.body.removeChild(d);
-    const m = cs.match(/rgba?\\((\\d+),\\s?(\\d+),\\s?(\\d+)/i);
-    if(!m) return '#000000';
-    return '#'+[1,2,3].map(i=>parseInt(m[i]).toString(16).padStart(2,'0')).join('');
-  }catch(e){ return '#000000' }
-}
-function rgbaToHex(val){
-  // if already rgba string, map to rgb hex (ignore alpha)
-  if(val.startsWith('rgba') || val.startsWith('rgb')) return rgbToHex(val);
-  return val; // assume hex
-}
-function capitalize(s){ if(!s) return ''; return s.charAt(0).toUpperCase()+s.slice(1) }
+  function doubleDown(){
+    if(!inRound || player.length !== 2) return;
+    const stake = Number(betInput.value||1);
+    if(bank < stake) return alert('Not enough bankroll to double');
+    bank -= stake; betInput.value = stake * 2;
+    player.push(draw()); renderHands();
+    if(bestTotal(player)>21){ inRound=false; addHistory('Busted after double','lose'); roundMsg.textContent='Busted — you lose'; stats.losses++; stats.rounds++; saveState(); renderHistory(); updateButtons(); return; }
+    stand();
+    // after settle, reset betInput to original suggestion
+    setTimeout(()=>{ betInput.value = Math.max(1, Math.round(Number(betInput.value)/2)); renderHands(); }, 200);
+  }
 
-// preset clicks
-presetNeon.addEventListener('click', ()=>{ theme = {...presets.neon, _preset:'neon'}; applyTheme(theme); saveTheme() });
-presetRed.addEventListener('click', ()=>{ theme = {...presets.red, _preset:'red'}; applyTheme(theme); saveTheme() });
-presetGreen.addEventListener('click', ()=>{ theme = {...presets.green, _preset:'green'}; applyTheme(theme); saveTheme() });
-presetGold.addEventListener('click', ()=>{ theme = {...presets.gold, _preset:'gold'}; applyTheme(theme); saveTheme() });
+  // persistence
+  function saveState(){ localStorage.setItem('bj_bank', String(bank)); localStorage.setItem('bj_stats', JSON.stringify(stats)); localStorage.setItem('bj_history', JSON.stringify(history)); }
+  function loadState(){ bank = Number(localStorage.getItem('bj_bank') || bank); stats = JSON.parse(localStorage.getItem('bj_stats') || JSON.stringify(stats)); history = JSON.parse(localStorage.getItem('bj_history') || '[]'); renderHistory(); }
+  // init
+  function init(){
+    loadState(); deck = buildDeck(); renderHands(); updateButtons();
+    bankAmountEl.textContent = '$' + bank.toFixed(2);
+  }
 
-// color pickers live
-colorBg.addEventListener('input', ()=>{ document.documentElement.style.setProperty('--bg', colorBg.value); theme.bg = colorBg.value; saveTheme(); });
-colorAccent.addEventListener('input', ()=>{ document.documentElement.style.setProperty('--accent', colorAccent.value); theme.accent = colorAccent.value; saveTheme(); });
-colorGlow.addEventListener('input', ()=>{ // convert color to rgba with alpha ~0.18
-  theme.glow = hexToRgba(colorGlow.value, 0.18); document.documentElement.style.setProperty('--glow', theme.glow); saveTheme();
-});
-scaleRange.addEventListener('input', ()=>{ document.documentElement.style.setProperty('--ui-scale', scaleRange.value); scaleVal.textContent = Math.round(scaleRange.value*100)+'%'; theme.scale = scaleRange.value; saveTheme(); });
+  // events
+  dealBtn.addEventListener('click', deal);
+  hitBtn.addEventListener('click', hit);
+  standBtn.addEventListener('click', stand);
+  doubleBtn.addEventListener('click', doubleDown);
+  resetBtn.addEventListener('click', ()=>{
+    if(confirm('Reset bankroll and stats?')){
+      localStorage.removeItem('bj_bank'); localStorage.removeItem('bj_history'); localStorage.removeItem('bj_stats');
+      bank = 1000; history = []; stats = {wins:0,losses:0,pushes:0,rounds:0}; saveState(); renderHistory(); renderHands(); roundMsg.textContent = 'Reset';
+    }
+  });
 
-// hex to rgba
-function hexToRgba(hex, a=0.18){
-  if(!hex) return 'rgba(0,0,0,0)';
-  const h = hex.replace('#','');
-  const r = parseInt(h.substring(0,2),16), g = parseInt(h.substring(2,4),16), b = parseInt(h.substring(4,6),16);
-  return `rgba(${r}, ${g}, ${b}, ${a})`;
-}
+  betInput.addEventListener('input', ()=>{ betPreview.textContent = '$' + (Number(betInput.value)||1); updateButtons(); });
 
-function saveTheme(){ localStorage.setItem('bj_theme', JSON.stringify(theme)) }
-function loadTheme(){
-  const saved = JSON.parse(localStorage.getItem('bj_theme') || '{}');
-  if(Object.keys(saved).length) { theme = saved; applyTheme(saved); if(saved.scale){ scaleRange.value = saved.scale; document.documentElement.style.setProperty('--ui-scale', saved.scale); scaleVal.textContent = Math.round(saved.scale*100)+'%' } }
-  else { applyTheme(presets.neon); theme = {...presets.neon, _preset:'neon'}; saveTheme(); }
-}
-saveThemeBtn.addEventListener('click', ()=>{ theme.bg = colorBg.value; theme.accent = colorAccent.value; theme.glow = hexToRgba(colorGlow.value,0.18); theme.scale = scaleRange.value; saveTheme(); alert('Theme saved!') });
-resetThemeBtn.addEventListener('click', ()=>{ localStorage.removeItem('bj_theme'); theme={}; loadTheme(); alert('Theme reset') });
+  clearHistoryBtn.addEventListener('click', ()=>{ if(confirm('Clear history?')){ history=[]; localStorage.removeItem('bj_history'); renderHistory(); }});
+  exportHistoryBtn.addEventListener('click', ()=>{ navigator.clipboard?.writeText(JSON.stringify(history, null, 2)).then(()=>alert('History copied to clipboard')); });
 
-// helpers for copy/paste
-function init(){
-  loadState(); loadTheme(); renderHistory(); renderHands();
-  // initial UI
-  betPreview.textContent = '$' + (Number(betInput.value)||1);
-  updateButtons();
-}
-init();
+  // theme / presets (simple)
+  const presets = {
+    neon: {bg:'#071026', accent:'#0ea5a4', glow:'rgba(14,165,164,0.22)'},
+    red: {bg:'#1b0505', accent:'#ef4444', glow:'rgba(239,68,68,0.16)'},
+    green: {bg:'#052014', accent:'#10b981', glow:'rgba(16,185,129,0.16)'},
+    gold: {bg:'#1b1406', accent:'#f59e0b', glow:'rgba(245,158,11,0.12)'}
+  };
+  function applyTheme(t){
+    if(!t) return;
+    document.documentElement.style.setProperty('--bg', t.bg || getComputedStyle(document.documentElement).getPropertyValue('--bg'));
+    document.documentElement.style.setProperty('--accent', t.accent || getComputedStyle(document.documentElement).getPropertyValue('--accent'));
+    document.documentElement.style.setProperty('--glow', t.glow || getComputedStyle(document.documentElement).getPropertyValue('--glow'));
+    // color inputs reflect current colors
+    try { bgColor.value = rgbToHex(t.bg); accentColor.value = rgbToHex(t.accent); glowColor.value = rgbToHex(rgbFromRgba(t.glow)); } catch(e){}
+  }
+  function rgbToHex(s){ if(!s) return '#000000'; const el = document.createElement('div'); el.style.color=s; document.body.appendChild(el); const cs = getComputedStyle(el).color; document.body.removeChild(el); const m = cs.match(/rgba?\\((\\d+),\\s*(\\d+),\\s*(\\d+)/); if(!m) return '#000000'; return '#'+[1,2,3].map(i=>parseInt(m[i]).toString(16).padStart(2,'0')).join(''); }
+  function rgbFromRgba(rgba){ if(!rgba) return rgba; const m = rgba.match(/rgba?\\((\\d+),\\s*(\\d+),\\s*(\\d+)/); if(!m) return rgba; return `rgb(${m[1]},${m[2]},${m[3]})`; }
 
+  presetNeon.addEventListener('click', ()=>{ theme = presets.neon; applyTheme(theme); localStorage.setItem('bj_theme', JSON.stringify(theme)); });
+  presetRed.addEventListener('click', ()=>{ theme = presets.red; applyTheme(theme); localStorage.setItem('bj_theme', JSON.stringify(theme)); });
+  presetGreen.addEventListener('click', ()=>{ theme = presets.green; applyTheme(theme); localStorage.setItem('bj_theme', JSON.stringify(theme)); });
+  presetGold.addEventListener('click', ()=>{ theme = presets.gold; applyTheme(theme); localStorage.setItem('bj_theme', JSON.stringify(theme)); });
+
+  bgColor.addEventListener('input', ()=>{ document.documentElement.style.setProperty('--bg', bgColor.value); theme.bg = bgColor.value; localStorage.setItem('bj_theme', JSON.stringify(theme)); });
+  accentColor.addEventListener('input', ()=>{ document.documentElement.style.setProperty('--accent', accentColor.value); theme.accent = accentColor.value; localStorage.setItem('bj_theme', JSON.stringify(theme)); });
+  glowColor.addEventListener('input', ()=>{ document.documentElement.style.setProperty('--glow', hexToRgba(glowColor.value, 0.18)); theme.glow = hexToRgba(glowColor.value,0.18); localStorage.setItem('bj_theme', JSON.stringify(theme)); });
+  scaleRange.addEventListener('input', ()=>{ document.documentElement.style.setProperty('--ui-scale', scaleRange.value); scaleVal.textContent = Math.round(scaleRange.value*100) + '%'; theme.scale = scaleRange.value; localStorage.setItem('bj_theme', JSON.stringify(theme)); });
+  saveThemeBtn.addEventListener('click', ()=>{ localStorage.setItem('bj_theme', JSON.stringify(theme)); alert('Theme saved'); });
+  resetThemeBtn.addEventListener('click', ()=>{ localStorage.removeItem('bj_theme'); theme={}; applyTheme(presets.neon); alert('Theme reset'); });
+
+  function hexToRgba(hex, a=0.18){ if(!hex) return ''; const h = hex.replace('#',''); const r=parseInt(h.substring(0,2),16), g=parseInt(h.substring(2,4),16), b=parseInt(h.substring(4,6),16); return `rgba(${r}, ${g}, ${b}, ${a})`; }
+
+  function loadTheme(){ const saved = JSON.parse(localStorage.getItem('bj_theme') || 'null'); if(saved){ theme = saved; applyTheme(saved); if(saved.scale){ document.documentElement.style.setProperty('--ui-scale', saved.scale); scaleRange.value = saved.scale; scaleVal.textContent = Math.round(saved.scale*100)+'%'; } } else { applyTheme(presets.neon); } }
+  function saveState(){ localStorage.setItem('bj_bank', String(bank)); localStorage.setItem('bj_stats', JSON.stringify(stats)); localStorage.setItem('bj_history', JSON.stringify(history)); }
+
+  // helpers used earlier but define safely
+  function addHistory(msg,outcome){ const entry={t:Date.now(),msg:msg,outcome:outcome,player:player.map(c=>c.rank+c.suit),dealer:dealer.map(c=>c.rank+c.suit),pTotal:bestTotal(player),dTotal:bestTotal(dealer)}; history.unshift(entry); if(history.length>200) history.pop(); localStorage.setItem('bj_history', JSON.stringify(history)); renderHistory(); }
+  function renderHistory(){ clearEl(historyList); for(const h of history){ const div=document.createElement('div'); div.className='history-item'; const l1=document.createElement('div'); l1.style.display='flex'; l1.style.justifyContent='space-between'; l1.innerHTML=`<div style="color:var(--muted)">${new Date(h.t).toLocaleTimeString()}</div><div>${h.outcome? (h.outcome==='win'?'<span class="outcome-win">WIN</span>':(h.outcome==='lose'?'<span class="outcome-lose">LOSE</span>':'<span class="outcome-push">PUSH</span>')):''}</div>`; const l2=document.createElement('div'); l2.style.color='var(--muted)'; l2.style.fontSize='13px'; l2.textContent = `${h.msg} · P:${h.player.join(' ')} (${h.pTotal}) · D:${h.dealer.join(' ')} (${h.dTotal})`; div.appendChild(l1); div.appendChild(l2); historyList.appendChild(div); } }
+
+  // init load
+  loadTheme(); init();
+
+})();
 </script>
 </body>
 </html>
