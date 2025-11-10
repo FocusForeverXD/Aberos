@@ -1,242 +1,609 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Blackjack</title>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Blackjack — Neon Cyber Casino</title>
 <style>
-  body {
-    font-family: "Segoe UI", sans-serif;
-    margin: 0;
-    background-color: #0a3d1c;
-    color: white;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    min-height: 100vh;
-    transition: background 0.3s ease;
+  :root{
+    --bg-1: #020617;
+    --bg-2: #061021;
+    --glass: rgba(255,255,255,0.03);
+    --muted: #9fb0bf;
+    --accent: #00f0ff;
+    --accent-2: #ff2ec7;
+    --glow: rgba(0,240,255,0.12);
+    --size: 1;
   }
-  h1 { text-align: center; margin-top: 20px; }
-  .game-container {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    width: 90%;
-    max-width: 900px;
-    gap: 20px;
+  /* Reset + base */
+  *{box-sizing:border-box}
+  html,body{height:100%;margin:0;font-family:Inter, "Segoe UI", Roboto, system-ui, -apple-system; background:radial-gradient(1200px 600px at 10% 10%, #001223 0%, var(--bg-1) 20%, var(--bg-2) 100%); color:#e6f7ff}
+  body{display:flex;align-items:flex-start;justify-content:center;padding:28px;gap:18px;transform:scale(var(--size))}
+  a{color:inherit}
+  /* Container */
+  .wrap{width:100%;max-width:1200px;display:grid;grid-template-columns:1fr 360px;gap:18px}
+  @media (max-width:960px){ .wrap{grid-template-columns:1fr; padding-bottom:28px} }
+  /* Game card */
+  .card{
+    border-radius:14px;
+    padding:14px;
+    background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+    border:1px solid rgba(255,255,255,0.04);
+    box-shadow:0 12px 40px var(--glow);
   }
-  .table {
-    flex: 2;
-    background: rgba(0,0,0,0.3);
-    border: 2px solid #fff3;
-    border-radius: 10px;
-    padding: 20px;
-    text-align: center;
-  }
-  .hand { margin: 10px 0; font-size: 1.5em; }
-  .controls button {
-    margin: 5px;
-    padding: 10px 20px;
-    border: none;
-    border-radius: 5px;
-    background: #28a745;
-    color: white;
-    font-size: 1em;
-    cursor: pointer;
-    transition: background 0.2s ease;
-  }
-  .controls button:hover { background: #218838; }
-
-  .panel {
-    flex: 1;
-    background: rgba(255,255,255,0.1);
-    border-radius: 10px;
-    padding: 10px;
-    overflow-y: auto;
-    max-height: 400px;
-  }
-  .panel h2 { font-size: 1.2em; text-align: center; }
-  .history-entry {
-    border-bottom: 1px solid rgba(255,255,255,0.2);
-    padding: 4px 0;
-    font-size: 0.9em;
-  }
-  .result {
-    margin: 10px;
-    font-weight: bold;
-    font-size: 1.3em;
-  }
-  .customization label { display: block; margin-top: 5px; }
-  .preset-colors button {
-    margin: 3px;
-    padding: 6px 10px;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    color: white;
-  }
-
-  @media (max-width: 700px) {
-    .game-container { flex-direction: column; align-items: center; }
-    .panel { width: 100%; max-height: none; }
-  }
+  .topbar{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:12px}
+  .brand{display:flex;gap:12px;align-items:center}
+  .logo{width:56px;height:56px;border-radius:12px;background:linear-gradient(135deg,var(--accent),var(--accent-2));display:flex;align-items:center;justify-content:center;font-weight:800;color:#021;box-shadow:0 8px 28px rgba(0,0,0,0.55)}
+  .title{font-size:18px;font-weight:800;letter-spacing:0.3px}
+  .sub{font-size:12px;color:var(--muted)}
+  .bank{background:linear-gradient(135deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));padding:8px 10px;border-radius:10px;text-align:right;border:1px solid rgba(255,255,255,0.03)}
+  .bank b{font-size:18px}
+  /* table area */
+  .table-area{background:linear-gradient(180deg,#021a1d 0%, #021117 100%);border-radius:12px;padding:14px;border:1px solid rgba(255,255,255,0.03);position:relative;overflow:hidden}
+  .neon-border{position:absolute;inset:0;border-radius:12px;pointer-events:none;box-shadow:0 0 40px 8px rgba(0,240,255,0.02) inset, 0 0 80px rgba(0,240,255,0.02);mix-blend-mode:screen}
+  .zone{padding:10px;border-radius:8px}
+  .hand-title{font-size:13px;color:var(--muted);margin-bottom:6px}
+  .hand-row{display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap}
+  .totals{color:var(--muted);font-size:13px;margin-top:6px}
+  /* cards */
+  .card-outer{width:84px;height:112px;perspective:1000px}
+  .card-inner{width:100%;height:100%;transition:transform .58s cubic-bezier(.2,.9,.3,1);transform-style:preserve-3d;position:relative;border-radius:10px}
+  .card-front,.card-back{position:absolute;inset:0;border-radius:10px;backface-visibility:hidden;display:flex;flex-direction:column;justify-content:space-between;padding:8px;border:1px solid rgba(255,255,255,0.06)}
+  .card-front{background:linear-gradient(180deg,#ffffff,#f2f7fb);color:#00131a}
+  .card-back{background:linear-gradient(135deg,#08212b,#021018);color:#cfeff0;transform:rotateY(180deg);display:flex;align-items:center;justify-content:center;font-size:22px}
+  .card-inner.flipped{transform:rotateY(180deg)}
+  .card-front .suit{font-size:28px;text-align:center}
+  .card-front.red{color:#bb1e57}
+  .card.small .card-front .suit{font-size:22px}
+  @media (max-width:640px){ .card-outer{width:64px;height:86px} .card-front .suit{font-size:22px} }
+  /* controls */
+  .controls{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
+  button.btn{background:linear-gradient(180deg,var(--accent),var(--accent-2));border:none;padding:10px 14px;border-radius:10px;color:#021;font-weight:800;cursor:pointer;box-shadow:0 10px 30px rgba(0,0,0,0.5)}
+  button.btn:hover{transform:translateY(-4px);box-shadow:0 18px 40px rgba(0,0,0,0.6)}
+  button.ghost{background:transparent;border:1px solid rgba(255,255,255,0.06);color:var(--muted);padding:8px 10px;border-radius:8px}
+  .small{font-size:13px;color:var(--muted)}
+  /* result banner */
+  .result-banner{position:relative;margin-top:12px;height:46px;display:flex;align-items:center;justify-content:center;overflow:visible}
+  .result-pill{padding:10px 18px;border-radius:999px;background:linear-gradient(90deg, rgba(255,255,255,0.03), rgba(255,255,255,0.02));border:1px solid rgba(255,255,255,0.04);font-weight:800;color:#def;box-shadow:0 8px 32px var(--glow);opacity:0;transform:scale(.9);transition:all .28s}
+  .result-pill.show{opacity:1;transform:scale(1)}
+  .result-win{background:linear-gradient(90deg,#00ffd6,#7cf7ff);color:#002;box-shadow:0 12px 40px rgba(0,255,214,0.12)}
+  .result-lose{background:linear-gradient(90deg,#ff4da6,#ff0066);color:#120014;box-shadow:0 12px 40px rgba(255,0,102,0.12)}
+  .result-push{background:linear-gradient(90deg,#ffd86a,#fff08a);color:#20150b}
+  /* sidebar */
+  .sidebar{display:flex;flex-direction:column;gap:12px}
+  .panel{padding:12px;border-radius:12px;background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));border:1px solid rgba(255,255,255,0.03)}
+  .history{max-height:320px;overflow:auto;padding:6px}
+  .history-item{padding:8px;border-radius:8px;margin-bottom:8px;background:linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.006));font-size:13px;display:flex;flex-direction:column;gap:6px;box-shadow:0 6px 18px rgba(0,0,0,0.45)}
+  .o-win{color:#a9ffdd;font-weight:800}
+  .o-lose{color:#ffb3cf;font-weight:800}
+  .o-push{color:#fff1a8;font-weight:800}
+  .stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:6px}
+  .chip{background:linear-gradient(90deg,#ffe8b3,#ffd780);padding:8px;border-radius:8px;text-align:center;font-weight:800}
+  /* customization */
+  label.small{display:block;color:var(--muted);font-size:13px;margin-bottom:6px}
+  input[type=color]{width:56px;height:36px;border-radius:8px;border:none;cursor:pointer}
+  input[type=range]{width:100%}
+  .presets{display:flex;gap:8px;flex-wrap:wrap}
+  .preset{padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);cursor:pointer;background:transparent}
+  .preset.active{box-shadow:0 12px 40px rgba(0,0,0,0.5);border-color:rgba(255,255,255,0.08)}
+  footer{font-size:12px;color:var(--muted);margin-top:10px;text-align:center}
 </style>
 </head>
 <body>
-  <h1>♠️ Blackjack ♣️</h1>
-  <div class="game-container">
-    <div class="table">
-      <div class="hand" id="dealer">Dealer: </div>
-      <div class="hand" id="player">Player: </div>
-      <div class="result" id="result"></div>
-      <div class="controls">
-        <button id="deal">Deal</button>
-        <button id="hit">Hit</button>
-        <button id="stand">Stand</button>
+  <div class="wrap">
+    <div class="card" style="padding:12px;">
+      <div class="topbar">
+        <div class="brand">
+          <div class="logo">NC</div>
+          <div>
+            <div class="title">Blackjack — Neon Cyber</div>
+            <div class="sub">Dealer stands on soft 17 · Double allowed</div>
+          </div>
+        </div>
+        <div class="bank">
+          <div class="small">Bankroll</div>
+          <div><b id="bankAmount">$1000</b></div>
+          <div class="small" id="roundMsg">Ready</div>
+        </div>
       </div>
+
+      <div class="table-area" id="tableArea">
+        <div class="neon-border" aria-hidden="true"></div>
+
+        <div class="zone">
+          <div class="hand-title">Dealer</div>
+          <div class="hand-row" id="dealerRow"></div>
+          <div class="totals">Total: <span id="dealerTotal">—</span></div>
+        </div>
+
+        <div style="height:12px"></div>
+
+        <div class="zone">
+          <div class="hand-title">Player</div>
+          <div class="hand-row" id="playerRow"></div>
+          <div class="totals">Total: <span id="playerTotal">—</span></div>
+        </div>
+
+        <div class="controls" style="margin-top:12px">
+          <button class="btn" id="btnDeal">Deal</button>
+          <button class="btn" id="btnHit" disabled>Hit</button>
+          <button class="btn" id="btnStand" disabled>Stand</button>
+          <button class="btn" id="btnDouble" disabled>Double</button>
+          <button class="preset" id="btnReset" title="Reset bankroll & history">Reset</button>
+        </div>
+
+        <div class="result-banner">
+          <div class="result-pill" id="resultPill" aria-live="polite"></div>
+        </div>
+
+        <div style="display:flex;gap:10px;margin-top:12px;align-items:center">
+          <div style="flex:1">
+            <label class="small">Bet</label>
+            <input id="betInput" type="number" min="1" value="10" style="width:100%;padding:8px;border-radius:8px;background:transparent;border:1px solid rgba(255,255,255,0.04);color:inherit" />
+          </div>
+          <div style="width:120px;text-align:right">
+            <div class="small">Preview</div>
+            <div class="chip" id="betPreview">$10</div>
+          </div>
+        </div>
+      </div>
+
+      <footer>Neon Cyber Casino — saved locally</footer>
     </div>
 
-    <div class="panel" id="history-panel">
-      <h2>📜 History</h2>
-      <div id="history"></div>
-      <div id="score-summary"></div>
-    </div>
+    <div class="sidebar">
+      <div class="panel">
+        <h4 style="margin:0 0 8px 0">History</h4>
+        <div class="history" id="historyList"></div>
+        <div class="stat-grid">
+          <div><div class="small">Wins</div><div id="statWins">0</div></div>
+          <div><div class="small">Losses</div><div id="statLosses">0</div></div>
+          <div><div class="small">Pushes</div><div id="statPushes">0</div></div>
+          <div><div class="small">Rounds</div><div id="statRounds">0</div></div>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:8px">
+          <button class="preset" id="clearHistory">Clear</button>
+          <button class="preset" id="exportHistory">Export</button>
+        </div>
+      </div>
 
-    <div class="panel customization">
-      <h2>🎨 Customization</h2>
-      <label>Background color: <input type="color" id="bgColor" value="#0a3d1c"></label>
-      <label>Accent color: <input type="color" id="accentColor" value="#28a745"></label>
-      <label>UI Scale: <input type="range" id="scaleRange" min="0.8" max="1.4" step="0.1" value="1"></label>
-      <div class="preset-colors">
-        <p>Presets:</p>
-        <button style="background:#1b1f3b" data-bg="#1b1f3b" data-accent="#00c3ff">Neon Blue</button>
-        <button style="background:#3b0a0a" data-bg="#3b0a0a" data-accent="#ff4040">Casino Red</button>
-        <button style="background:#093b1f" data-bg="#093b1f" data-accent="#00e676">Emerald Green</button>
-        <button style="background:#3b2a09" data-bg="#3b2a09" data-accent="#ffd700">Golden Glow</button>
+      <div class="panel">
+        <h4 style="margin:0 0 8px 0">Customize</h4>
+        <div style="margin-bottom:8px">
+          <div class="small">Presets</div>
+          <div class="presets" style="margin-top:8px">
+            <div class="preset" data-preset="tron" id="presetTron" style="background:linear-gradient(90deg,#00f0ff44,#ff2ec744)">Tron Blue</div>
+            <div class="preset" data-preset="mag" id="presetMag" style="background:linear-gradient(90deg,#ff2ec744,#ff7aeb44)">Mag Blaze</div>
+            <div class="preset" data-preset="emer" id="presetEmer" style="background:linear-gradient(90deg,#3bffb044,#00ffd644)">Emerald</div>
+            <div class="preset" data-preset="amber" id="presetAmb" style="background:linear-gradient(90deg,#ffd76b44,#ffb86b44)">Amber</div>
+          </div>
+        </div>
+
+        <div style="margin-top:8px">
+          <label class="small">Accent color</label>
+          <input type="color" id="colorAccent" value="#00f0ff" />
+        </div>
+        <div style="margin-top:8px">
+          <label class="small">Accent 2</label>
+          <input type="color" id="colorAccent2" value="#ff2ec7" />
+        </div>
+        <div style="margin-top:8px">
+          <label class="small">Glow color (alpha baked)</label>
+          <input type="color" id="colorGlow" value="#00f0ff" />
+        </div>
+
+        <div style="margin-top:8px">
+          <label class="small">UI Scale</label>
+          <input id="scaleRange" type="range" min="0.8" max="1.25" step="0.01" value="1" />
+          <div id="scaleVal">100%</div>
+        </div>
+
+        <div style="display:flex;gap:8px;margin-top:12px">
+          <button class="preset" id="saveTheme">Save</button>
+          <button class="preset" id="resetTheme">Reset</button>
+        </div>
       </div>
     </div>
   </div>
 
+<!-- Sounds (small base64 beeps) -->
+<audio id="sDeal" preload="auto"><source src="data:audio/mp3;base64,SUQzAwAAAAAA..."/></audio>
+<audio id="sFlip" preload="auto"><source src="data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAESsA..." /></audio>
+<audio id="sWin" preload="auto"><source src="data:audio/wav;base64,UklGRmQAAABXQVZFZm10IBAAAAABAAEAESsA..." /></audio>
+<audio id="sLose" preload="auto"><source src="data:audio/wav;base64,UklGRlQAAABXQVZFZm10IBAAAAABAAEAESsA..." /></audio>
+
 <script>
-const dealerEl = document.getElementById("dealer");
-const playerEl = document.getElementById("player");
-const resultEl = document.getElementById("result");
-const historyEl = document.getElementById("history");
-const scoreSummaryEl = document.getElementById("score-summary");
+/*
+  Blackjack Neon Cyber — JavaScript
+  - Full play flow: deal / hit / stand / double
+  - History, stats, theme saved in localStorage
+  - Card flip animations, result banner, sounds
+*/
 
-let deck = [], dealerHand = [], playerHand = [], wins = 0, losses = 0, ties = 0;
+// ---------- Helpers / DOM ----------
+const $ = q => document.querySelector(q);
+const dealerRow = $('#dealerRow'), playerRow = $('#playerRow');
+const dealerTotalEl = $('#dealerTotal'), playerTotalEl = $('#playerTotal');
+const btnDeal = $('#btnDeal'), btnHit = $('#btnHit'), btnStand = $('#btnStand'), btnDouble = $('#btnDouble'), btnReset = $('#btnReset');
+const betInput = $('#betInput'), betPreview = $('#betPreview');
+const resultPill = $('#resultPill'), roundMsg = $('#roundMsg'), bankAmount = $('#bankAmount');
+const historyList = $('#historyList');
+const statWins = $('#statWins'), statLosses = $('#statLosses'), statPushes = $('#statPushes'), statRounds = $('#statRounds');
+const clearHistory = $('#clearHistory'), exportHistory = $('#exportHistory');
 
-function createDeck() {
-  const suits = ["♠", "♥", "♦", "♣"];
-  const values = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K"];
-  deck = [];
-  for (let s of suits) {
-    for (let v of values) deck.push({value: v, suit: s});
-  }
-  deck.sort(() => Math.random() - 0.5);
+const colorAccent = $('#colorAccent'), colorAccent2 = $('#colorAccent2'), colorGlow = $('#colorGlow');
+const presetTron = $('#presetTron'), presetMag = $('#presetMag'), presetEmer = $('#presetEmer'), presetAmb = $('#presetAmb');
+const saveTheme = $('#saveTheme'), resetTheme = $('#resetTheme');
+const scaleRange = $('#scaleRange'), scaleVal = $('#scaleVal');
+
+const sDeal = $('#sDeal'), sFlip = $('#sFlip'), sWin = $('#sWin'), sLose = $('#sLose');
+
+// If your browser blocks autoplay, user must interact to hear sounds
+function playSound(audioEl){
+  try{ audioEl.currentTime = 0; audioEl.play(); } catch(e) {}
 }
 
-function getValue(hand) {
-  let total = 0, aces = 0;
-  for (let card of hand) {
-    if (["J","Q","K"].includes(card.value)) total += 10;
-    else if (card.value === "A") { total += 11; aces++; }
-    else total += parseInt(card.value);
-  }
-  while (total > 21 && aces) { total -= 10; aces--; }
+// ---------- Game Data ----------
+const SUITS = ['♠','♥','♦','♣'];
+const RANKS = ['A','2','3','4','5','6','7','8','9','10','J','Q','K'];
+
+let deck = [], player = [], dealer = [];
+let inRound = false;
+let bankroll = Number(localStorage.getItem('nc_bank')) || 1000;
+let stats = JSON.parse(localStorage.getItem('nc_stats') || JSON.stringify({wins:0,losses:0,pushes:0,rounds:0}));
+let history = JSON.parse(localStorage.getItem('nc_history') || '[]');
+let theme = JSON.parse(localStorage.getItem('nc_theme') || '{}');
+
+// ---------- Deck / Card logic ----------
+function buildDeck(){
+  const d = [];
+  for(const s of SUITS) for(const r of RANKS) d.push({suit:s,rank:r});
+  for(let i=d.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[d[i],d[j]]=[d[j],d[i]]}
+  return d;
+}
+function draw(){
+  if(deck.length < 8){ deck = buildDeck(); addHistory('Deck reshuffled',null); }
+  return deck.pop();
+}
+function cardValue(c){
+  if(c.rank==='A') return 11;
+  if(['J','Q','K'].includes(c.rank)) return 10;
+  return Number(c.rank);
+}
+function bestTotal(hand){
+  let total = hand.reduce((s,c)=>s+cardValue(c),0);
+  let aces = hand.filter(x=>x.rank==='A').length;
+  while(total>21 && aces>0){ total -= 10; aces--; }
   return total;
 }
 
-function renderHands(hideDealer=false) {
-  dealerEl.textContent = "Dealer: " + (hideDealer ? dealerHand[0].value + dealerHand[0].suit + " [hidden]" :
-    dealerHand.map(c=>c.value+c.suit).join(" ")) + (hideDealer ? "" : " ("+getValue(dealerHand)+")");
-  playerEl.textContent = "Player: " + playerHand.map(c=>c.value+c.suit).join(" ") + " ("+getValue(playerHand)+")";
-}
-
-function endGame(resultText) {
-  resultEl.textContent = resultText;
-  let playerTotal = getValue(playerHand), dealerTotal = getValue(dealerHand);
-  if (resultText.includes("Win")) wins++;
-  else if (resultText.includes("Lose")) losses++;
-  else ties++;
-  const entry = document.createElement("div");
-  entry.className = "history-entry";
-  entry.textContent = `Player ${playerTotal} vs Dealer ${dealerTotal} → ${resultText}`;
-  historyEl.appendChild(entry);
-  scoreSummaryEl.textContent = `Wins: ${wins} | Losses: ${losses} | Ties: ${ties}`;
-  historyEl.scrollTop = historyEl.scrollHeight;
-}
-
-document.getElementById("deal").onclick = () => {
-  createDeck();
-  playerHand = [deck.pop(), deck.pop()];
-  dealerHand = [deck.pop(), deck.pop()];
-  renderHands(true);
-  resultEl.textContent = "";
-};
-
-document.getElementById("hit").onclick = () => {
-  if (!playerHand.length) return;
-  playerHand.push(deck.pop());
-  renderHands(true);
-  if (getValue(playerHand) > 21) {
-    renderHands(false);
-    endGame("You Lose (Bust)");
+// ---------- UI Rendering ----------
+function clear(el){ while(el.firstChild) el.removeChild(el.firstChild); }
+function makeCardElement(card, hide=false){
+  const outer = document.createElement('div'); outer.className='card-outer';
+  const inner = document.createElement('div'); inner.className='card-inner';
+  const front = document.createElement('div'); front.className='card-front card';
+  const back = document.createElement('div'); back.className='card-back card';
+  front.innerHTML = `<div style="font-size:14px">${card.rank}</div><div class="suit">${card.suit}</div><div style="text-align:right;font-size:14px">${card.rank}</div>`;
+  if(card.suit==='♥' || card.suit==='♦') front.classList.add('red');
+  back.innerHTML = '🂠';
+  inner.appendChild(front); inner.appendChild(back); outer.appendChild(inner);
+  // initial flip animation in
+  setTimeout(()=>{ inner.classList.add('flipped'); setTimeout(()=>inner.classList.remove('flipped'), 600); }, 40);
+  if(hide){
+    // show back by default
+    inner.classList.add('flipped');
+    // ensure front hidden visually until reveal
   }
-};
-
-document.getElementById("stand").onclick = () => {
-  if (!playerHand.length) return;
-  while (getValue(dealerHand) < 17) dealerHand.push(deck.pop());
-  renderHands(false);
-  const playerTotal = getValue(playerHand), dealerTotal = getValue(dealerHand);
-  if (dealerTotal > 21 || playerTotal > dealerTotal) endGame("You Win!");
-  else if (playerTotal < dealerTotal) endGame("You Lose!");
-  else endGame("Tie!");
-};
-
-// Customization logic
-const bgPicker = document.getElementById("bgColor");
-const accentPicker = document.getElementById("accentColor");
-const scaleRange = document.getElementById("scaleRange");
-const presetBtns = document.querySelectorAll(".preset-colors button");
-
-function applyTheme(bg, accent, scale) {
-  document.body.style.background = bg;
-  document.querySelectorAll(".controls button").forEach(btn => btn.style.background = accent);
-  document.body.style.transform = `scale(${scale})`;
+  return outer;
+}
+function render(){
+  clear(dealerRow); clear(playerRow);
+  for(let i=0;i<dealer.length;i++){
+    const hide = (i===0 && inRound);
+    const el = makeCardElement(dealer[i], hide);
+    dealerRow.appendChild(el);
+  }
+  for(const c of player) playerRow.appendChild(makeCardElement(c,false));
+  dealerTotalEl.textContent = inRound ? '—' : (dealer.length?bestTotal(dealer):'—');
+  playerTotalEl.textContent = player.length ? bestTotal(player) : '—';
+  bankAmount.textContent = '$' + bankroll.toFixed(2);
+  betPreview.textContent = '$' + (Number(betInput.value)||1);
+  updateButtons();
 }
 
-function saveSettings(bg, accent, scale) {
-  localStorage.setItem("bj_settings", JSON.stringify({bg, accent, scale}));
+// ---------- Buttons / Flow ----------
+function updateButtons(){
+  btnDeal.disabled = inRound;
+  btnHit.disabled = !inRound;
+  btnStand.disabled = !inRound;
+  btnDouble.disabled = !(inRound && player.length===2 && bankroll >= Number(betInput.value||1));
 }
 
-function loadSettings() {
-  const saved = localStorage.getItem("bj_settings");
-  if (saved) {
-    const {bg, accent, scale} = JSON.parse(saved);
-    bgPicker.value = rgbToHex(bg);
-    accentPicker.value = rgbToHex(accent);
-    scaleRange.value = scale;
-    applyTheme(bg, accent, scale);
+function showResult(text, cls){
+  resultPill.textContent = text;
+  resultPill.className = 'result-pill show ' + cls;
+  setTimeout(()=>{ resultPill.classList.remove('show'); }, 2200);
+}
+
+function addHistory(msg, outcome){
+  const entry = {
+    t: Date.now(),
+    msg,
+    outcome,
+    player: player.map(c=>c.rank+c.suit),
+    dealer: dealer.map(c=>c.rank+c.suit),
+    pTotal: bestTotal(player),
+    dTotal: bestTotal(dealer)
+  };
+  history.unshift(entry);
+  if(history.length>200) history.pop();
+  localStorage.setItem('nc_history', JSON.stringify(history));
+  renderHistory();
+}
+
+function renderHistory(){
+  clear(historyList);
+  for(const h of history){
+    const div = document.createElement('div'); div.className='history-item';
+    const top = document.createElement('div'); top.style.display='flex'; top.style.justifyContent='space-between';
+    const left = document.createElement('div'); left.style.color='var(--muted)'; left.textContent = new Date(h.t).toLocaleTimeString();
+    const right = document.createElement('div');
+    if(h.outcome==='win') right.innerHTML = `<span class="o-win">WIN</span>`;
+    else if(h.outcome==='lose') right.innerHTML = `<span class="o-lose">LOSE</span>`;
+    else if(h.outcome==='push') right.innerHTML = `<span class="o-push">PUSH</span>`;
+    top.appendChild(left); top.appendChild(right);
+    const bottom = document.createElement('div'); bottom.style.color='var(--muted)'; bottom.style.fontSize='13px';
+    bottom.textContent = `${h.msg} • P:${h.player.join(' ')} (${h.pTotal}) • D:${h.dealer.join(' ')} (${h.dTotal})`;
+    div.appendChild(top); div.appendChild(bottom);
+    historyList.appendChild(div);
+  }
+  statWins.textContent = stats.wins; statLosses.textContent = stats.losses; statPushes.textContent = stats.pushes; statRounds.textContent = stats.rounds;
+}
+
+// ---------- Gameplay ----------
+function startDeal(){
+  if(inRound) return;
+  const stake = Number(betInput.value||1);
+  if(stake < 1) return alert('Bet must be at least 1');
+  if(stake > bankroll) return alert('Bet exceeds bankroll');
+  // prepare deck
+  if(!deck.length) deck = buildDeck();
+  player = []; dealer = [];
+  player.push(draw()); dealer.push(draw()); player.push(draw()); dealer.push(draw());
+  bankroll -= stake;
+  inRound = true; roundMsg.textContent = 'Your move';
+  playSound(sDeal);
+  render();
+  // check natural blackjacks
+  const p = bestTotal(player), d = bestTotal(dealer);
+  if(p===21 || d===21){
+    inRound = false; render();
+    if(p===21 && d!==21){
+      const winAmt = Math.round(stake * 1.5 * 100) / 100;
+      bankroll += stake + winAmt;
+      stats.wins++; stats.rounds++;
+      addHistory('Blackjack!', 'win');
+      showResult('BLACKJACK! +$' + winAmt, 'result-win');
+      playSound(sWin);
+    } else if(d===21 && p!==21){
+      stats.losses++; stats.rounds++;
+      addHistory('Dealer Blackjack', 'lose');
+      showResult('Dealer Blackjack — You lose', 'result-lose');
+      playSound(sLose);
+    } else {
+      // both BJ -> push
+      bankroll += stake;
+      stats.pushes++; stats.rounds++;
+      addHistory('Push (both BJ)', 'push');
+      showResult('Push (Blackjack)', 'result-push');
+    }
+    saveState(); render(); renderHistory(); updateButtons();
   }
 }
 
-function rgbToHex(rgb) {
-  const match = rgb.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/); // ✅ fixed regex
-  if (!match) return "#0a3d1c";
-  return "#" + match.slice(1,4).map(x=>("0"+parseInt(x).toString(16)).slice(-2)).join("");
+function playerHit(){
+  if(!inRound) return;
+  player.push(draw()); playSound(sFlip); render();
+  if(bestTotal(player) > 21){
+    inRound = false;
+    stats.losses++; stats.rounds++;
+    addHistory('Busted', 'lose');
+    showResult('BUST — You lose', 'result-lose');
+    playSound(sLose);
+    saveState(); renderHistory(); updateButtons();
+  }
 }
 
-bgPicker.oninput = () => { applyTheme(bgPicker.value, accentPicker.value, scaleRange.value); saveSettings(bgPicker.value, accentPicker.value, scaleRange.value); };
-accentPicker.oninput = () => { applyTheme(bgPicker.value, accentPicker.value, scaleRange.value); saveSettings(bgPicker.value, accentPicker.value, scaleRange.value); };
-scaleRange.oninput = () => { applyTheme(bgPicker.value, accentPicker.value, scaleRange.value); saveSettings(bgPicker.value, accentPicker.value, scaleRange.value); };
-presetBtns.forEach(btn => btn.onclick = () => {
-  applyTheme(btn.dataset.bg, btn.dataset.accent, scaleRange.value);
-  saveSettings(btn.dataset.bg, btn.dataset.accent, scaleRange.value);
-});
+function playerStand(){
+  if(!inRound) return;
+  // dealer AI: hit until 17 or greater (stand on soft 17)
+  while(bestTotal(dealer) < 17) { dealer.push(draw()); playSound(sFlip); }
+  inRound = false;
+  resolveRound();
+}
 
-loadSettings();
+function playerDouble(){
+  if(!inRound || player.length !== 2) return;
+  const stake = Number(betInput.value||1);
+  if(bankroll < stake) return alert('Not enough bankroll to double');
+  bankroll -= stake; betInput.value = stake * 2;
+  player.push(draw()); playSound(sFlip); render();
+  if(bestTotal(player) > 21){
+    inRound = false; stats.losses++; stats.rounds++; addHistory('Busted after double', 'lose'); showResult('BUST after double', 'result-lose'); playSound(sLose); saveState(); renderHistory(); updateButtons();
+    // restore betInput slowly
+    setTimeout(()=>{ betInput.value = Math.max(1, Math.round(Number(betInput.value)/2)); render(); }, 200);
+    return;
+  }
+  // proceed to dealer
+  while(bestTotal(dealer) < 17) { dealer.push(draw()); playSound(sFlip); }
+  inRound = false; resolveRound();
+  setTimeout(()=>{ betInput.value = Math.max(1, Math.round(Number(betInput.value)/2)); render(); }, 200);
+}
+
+function resolveRound(){
+  const p = bestTotal(player), d = bestTotal(dealer);
+  const stake = Number(betInput.value||1);
+  if(d > 21 || p > d){
+    bankroll += stake * 2;
+    stats.wins++;
+    addHistory('Win', 'win');
+    showResult(`WIN — ${p} vs ${d}`, 'result-win');
+    playSound(sWin);
+  } else if(p < d){
+    stats.losses++;
+    addHistory('Lose', 'lose');
+    showResult(`LOSE — ${p} vs ${d}`, 'result-lose');
+    playSound(sLose);
+  } else {
+    bankroll += stake;
+    stats.pushes++;
+    addHistory('Push', 'push');
+    showResult(`PUSH — ${p}`, 'result-push');
+  }
+  stats.rounds++; saveState(); renderHistory(); render(); updateButtons();
+}
+
+// ---------- Persistence ----------
+function saveState(){
+  localStorage.setItem('nc_bank', String(bankroll));
+  localStorage.setItem('nc_stats', JSON.stringify(stats));
+  localStorage.setItem('nc_history', JSON.stringify(history));
+  localStorage.setItem('nc_theme', JSON.stringify(theme));
+}
+function loadState(){
+  bankroll = Number(localStorage.getItem('nc_bank') || bankroll);
+  stats = JSON.parse(localStorage.getItem('nc_stats') || JSON.stringify(stats));
+  history = JSON.parse(localStorage.getItem('nc_history') || '[]');
+  theme = JSON.parse(localStorage.getItem('nc_theme') || '{}');
+  // apply theme if present
+  if(theme.accent) applyTheme(theme);
+  renderHistory();
+}
+
+// ---------- Theme / Customization ----------
+function setCSSVar(name, value){ document.documentElement.style.setProperty(name, value); }
+
+function applyTheme(t){
+  if(!t) return;
+  if(t.accent) setCSSVar('--accent', t.accent);
+  if(t.accent2) setCSSVar('--accent-2', t.accent2);
+  if(t.glow) setCSSVar('--glow', t.glow);
+  if(t.scale) { setCSSVar('--size', t.scale); scaleRange.value = t.scale; scaleVal.textContent = Math.round(t.scale*100) + '%'; }
+  // update color inputs
+  if(t.accent) colorAccent.value = t.accent;
+  if(t.accent2) colorAccent2.value = t.accent2;
+  if(t.glow) colorGlow.value = rgbaToHex(t.glow);
+}
+
+function rgbaToHex(rgba){
+  if(!rgba) return '#00f0ff';
+  const m = rgba.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
+  if(!m) return rgba;
+  const r = parseInt(m[1]), g = parseInt(m[2]), b = parseInt(m[3]);
+  return '#'+[r,g,b].map(x=>x.toString(16).padStart(2,'0')).join('');
+}
+
+function hexToRgba(hex, a=0.18){
+  if(!hex) return '';
+  const h = hex.replace('#','');
+  const r = parseInt(h.substring(0,2),16), g = parseInt(h.substring(2,4),16), b = parseInt(h.substring(4,6),16);
+  return `rgba(${r}, ${g}, ${b}, ${a})`;
+}
+
+function saveThemeToVar(){
+  theme = {
+    accent: colorAccent.value,
+    accent2: colorAccent2.value,
+    glow: hexToRgba(colorGlow.value, 0.14),
+    scale: scaleRange.value
+  };
+  localStorage.setItem('nc_theme', JSON.stringify(theme));
+}
+
+// preset handlers
+presetTron.addEventListener('click', ()=>{ colorAccent.value='#00f0ff'; colorAccent2.value='#ff2ec7'; colorGlow.value='#00f0ff'; scaleRange.value=1; applyTheme({accent: '#00f0ff', accent2:'#ff2ec7', glow: hexToRgba('#00f0ff',0.14), scale:1}); saveThemeToVar(); });
+presetMag.addEventListener('click', ()=>{ colorAccent.value='#ff2ec7'; colorAccent2.value='#ff7aeb'; colorGlow.value='#ff2ec7'; scaleRange.value=1; applyTheme({accent:'#ff2ec7', accent2:'#ff7aeb', glow:hexToRgba('#ff2ec7',0.14), scale:1}); saveThemeToVar(); });
+presetEmer.addEventListener('click', ()=>{ colorAccent.value='#3bffb0'; colorAccent2.value='#00ffd6'; colorGlow.value='#3bffb0'; scaleRange.value=1; applyTheme({accent:'#3bffb0', accent2:'#00ffd6', glow:hexToRgba('#3bffb0',0.14), scale:1}); saveThemeToVar(); });
+presetAmb.addEventListener('click', ()=>{ colorAccent.value='#ffd76b'; colorAccent2.value='#ffb86b'; colorGlow.value='#ffd76b'; scaleRange.value=1; applyTheme({accent:'#ffd76b', accent2:'#ffb86b', glow:hexToRgba('#ffd76b',0.12), scale:1}); saveThemeToVar(); });
+
+colorAccent.addEventListener('input', ()=>{ setCSSVar('--accent', colorAccent.value); saveThemeToVar(); });
+colorAccent2.addEventListener('input', ()=>{ setCSSVar('--accent-2', colorAccent2.value); saveThemeToVar(); });
+colorGlow.addEventListener('input', ()=>{ setCSSVar('--glow', hexToRgba(colorGlow.value, 0.14)); saveThemeToVar(); });
+scaleRange.addEventListener('input', ()=>{ setCSSVar('--size', scaleRange.value); scaleVal.textContent = Math.round(scaleRange.value*100) + '%'; saveThemeToVar(); });
+
+saveTheme.addEventListener('click', ()=>{ saveThemeToVar(); alert('Theme saved to localStorage'); });
+resetTheme.addEventListener('click', ()=>{ localStorage.removeItem('nc_theme'); location.reload(); });
+
+// export / clear history
+clearHistory.addEventListener('click', ()=>{ if(confirm('Clear history?')){ history=[]; localStorage.removeItem('nc_history'); renderHistory(); }});
+exportHistory.addEventListener('click', ()=>{ navigator.clipboard?.writeText(JSON.stringify(history,null,2)).then(()=>alert('History copied to clipboard')); });
+
+// reset app
+btnReset.addEventListener('click', ()=>{ if(confirm('Reset bankroll and stats?')){ localStorage.removeItem('nc_bank'); localStorage.removeItem('nc_stats'); localStorage.removeItem('nc_history'); localStorage.removeItem('nc_theme'); bankroll=1000; stats={wins:0,losses:0,pushes:0,rounds:0}; history=[]; saveState(); renderHistory(); render(); alert('Reset complete'); location.reload(); }});
+
+// sound placeholders: if your browser can't autoplay audio, sounds may silence until user interacts
+// NOTE: the <audio> tags had placeholder base64 earlier. To avoid lengthy base64 here (and keep page small), we'll create small tones procedurally using WebAudio for crispness.
+let audioCtx = null;
+function ensureAudio(){
+  if(!audioCtx){ try{ audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e) { audioCtx = null; } }
+}
+function tone(freq, duration=0.08, type='sine', volume=0.25){
+  ensureAudio();
+  if(!audioCtx) return;
+  const o = audioCtx.createOscillator();
+  const g = audioCtx.createGain();
+  o.type = type; o.frequency.value = freq;
+  g.gain.value = volume;
+  o.connect(g); g.connect(audioCtx.destination);
+  o.start();
+  g.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + duration);
+  setTimeout(()=>{ try{o.stop()}catch(e){} }, duration*1000 + 20);
+}
+
+function playSDeal(){ tone(440,0.06,'triangle',0.08); tone(660,0.09,'sine',0.05); }
+function playSFlip(){ tone(880,0.06,'sine',0.06); }
+function playSWin(){ tone(880,0.08,'sine',0.08); tone(1100,0.12,'sine',0.06); }
+function playSLose(){ tone(160,0.12,'sawtooth',0.12); }
+
+// bind to playSound wrappers for compatibility
+function playSound(el){
+  // try our WebAudio tones
+  if(el === sDeal) playSDeal();
+  else if(el === sFlip) playSFlip();
+  else if(el === sWin) playSWin();
+  else if(el === sLose) playSLose();
+}
+
+// ---------- Init ----------
+function init(){
+  loadState();
+  renderHistory();
+  render();
+  // ensure theme applied
+  if(theme && theme.accent) applyTheme(theme);
+  // wire native buttons
+  btnDeal.addEventListener('click', ()=>{ startDeal(); });
+  btnHit.addEventListener('click', ()=>{ playerHit(); });
+  btnStand.addEventListener('click', ()=>{ playerStand(); });
+  btnDouble.addEventListener('click', ()=>{ playerDouble(); });
+  betInput.addEventListener('input', ()=>{ betPreview.textContent = '$' + (Number(betInput.value)||1); updateButtons(); });
+  // make sure first user interaction enables audio
+  document.addEventListener('click', function one(){ ensureAudio(); document.removeEventListener('click', one); }, {once:true});
+}
+
+function loadState(){
+  bankroll = Number(localStorage.getItem('nc_bank')) || bankroll;
+  stats = JSON.parse(localStorage.getItem('nc_stats') || JSON.stringify(stats));
+  history = JSON.parse(localStorage.getItem('nc_history') || '[]');
+  theme = JSON.parse(localStorage.getItem('nc_theme') || '{}');
+  // apply theme if saved
+  if(theme && theme.accent) applyTheme(theme);
+}
+
+// call init
+init();
+
 </script>
 </body>
 </html>
