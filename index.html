@@ -1,246 +1,264 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>🌠 Planet Roll Inventory</title>
-  <style>
-    body {
-      font-family: 'Segoe UI', sans-serif;
-      background: #0b0f1a;
-      color: #00ffcc;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-      padding-left: 20px; /* Add padding to shift everything right */
-    }
-    h1 {
-      font-size: 2rem;
-      margin-bottom: 10px;
-    }
-    .planet-display {
-      font-size: 1.6rem;
-      padding: 20px;
-      border: 2px solid #00ffcc;
-      border-radius: 12px;
-      margin-top: 20px;
-      background-color: #111;
-      box-shadow: 0 0 15px #00ffcc88;
-      text-align: center;
-      width: 50%; /* Adjust the width */
-    }
-    .inventory {
-      max-height: 400px;
-      overflow-y: auto;
-      width: 35%; /* Increased width */
-      margin-right: 20px; /* Space between the inventory and planet display */
-      max-width: 500px; /* Limit width to avoid stretching too much */
-    }
-    table {
-      margin-top: 30px;
-      border-collapse: collapse;
-      width: 100%;
-    }
-    th, td {
-      padding: 12px; /* Increased padding for larger cells */
-      border: 1px solid #00ffcc;
-      text-align: center;
-    }
-    th {
-      background-color: #111;
-    }
-    button {
-      background-color: #00ffcc;
-      color: black;
-      padding: 10px 15px;
-      border: none;
-      border-radius: 10px;
-      cursor: pointer;
-      margin-top: 15px;
-      width: 100%;
-    }
-    button:hover {
-      background-color: #00cc99;
-    }
-    .content-container {
-      display: flex;
-      justify-content: space-between;
-      width: 85%; /* Wider content container */
-      margin-left: 20px; /* Shift everything a bit to the right */
-    }
-    .highlight {
-      background-color: yellow;
-      color: black;
-    }
-    .highlight-red {
-      background-color: red;
-      color: white;
-    }
-    .highlight-blue {
-      background-color: blue;
-      color: white;
-    }
-    .highlight-green {
-      background-color: green;
-      color: white;
-    }
-  </style>
-</head>
-<body>
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+// This file is a single-file React component implementing a polished RNG UI.
+// Requirements: TailwindCSS in your project. Optional: framer-motion, lucide-react
 
-  <h1>🌌 Weighted Planet Viewer & Inventory</h1>
+export default function RNGGame() {
+  // Game settings
+  const [numOutcomes, setNumOutcomes] = useState(6); // sides / outcomes
+  const [betAmount, setBetAmount] = useState(10);
+  const [payoutMultiplier, setPayoutMultiplier] = useState(5); // win multiplier
+  const [autoplay, setAutoplay] = useState(false);
+  const [seed, setSeed] = useState("");
+  const [history, setHistory] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem("rng_history_v1")) || [];
+    } catch { return []; }
+  });
 
-  <div class="content-container">
-    <div class="planet-display" id="planetDisplay">Loading...</div>
+  const [spinning, setSpinning] = useState(false);
+  const [result, setResult] = useState(null);
+  const autoplayRef = useRef(null);
 
-    <div class="inventory" id="planetInventory">
-      <h2>🌍 Planet Inventory</h2>
-      <table id="planetTable">
-        <thead>
-          <tr>
-            <th>Planet</th>
-            <th>Rarity</th>
-            <th>Odds</th>
-            <th>Quantity</th>
-            <th>Action</th>
-          </tr>
-        </thead>
-        <tbody>
-          <!-- Dynamic content will be injected here -->
-        </tbody>
-      </table>
+  // Simple seeded RNG (Mulberry32). If seed empty => use Math.random.
+  function mulberry32(a) {
+    return function() {
+      a |= 0;
+      a = a + 0x6D2B79F5 | 0;
+      let t = Math.imul(a ^ a >>> 15, 1 | a);
+      t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+      return ((t ^ t >>> 14) >>> 0) / 4294967296;
+    }
+  }
+
+  const rng = useMemo(() => {
+    if (!seed) return Math.random;
+    // create a numeric seed from string
+    let s = 0;
+    for (let i = 0; i < seed.length; i++) s = (s * 31 + seed.charCodeAt(i)) | 0;
+    return mulberry32(s);
+  }, [seed]);
+
+  useEffect(() => {
+    localStorage.setItem("rng_history_v1", JSON.stringify(history));
+  }, [history]);
+
+  useEffect(() => {
+    if (autoplay) {
+      autoplayRef.current = setInterval(() => {
+        if (!spinning) playOnce();
+      }, 1200);
+    } else {
+      clearInterval(autoplayRef.current);
+    }
+    return () => clearInterval(autoplayRef.current);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoplay, spinning, numOutcomes, payoutMultiplier, betAmount, seed]);
+
+  const wheelSegments = useMemo(() => {
+    const arr = [];
+    for (let i = 1; i <= numOutcomes; i++) arr.push(i);
+    return arr;
+  }, [numOutcomes]);
+
+  function playOnce() {
+    if (spinning) return;
+    setSpinning(true);
+    setResult(null);
+
+    // fake spin duration
+    const duration = 900 + Math.floor(rng() * 900);
+
+    // determine result immediately but delay showing
+    const roll = Math.floor(rng() * numOutcomes) + 1;
+
+    setTimeout(() => {
+      setResult(roll);
+      const win = roll === numOutcomes; // define win condition: top outcome is the lucky one
+      const entry = {
+        time: Date.now(),
+        roll,
+        win,
+        bet: betAmount,
+        payout: win ? betAmount * payoutMultiplier : 0,
+        settings: { numOutcomes, payoutMultiplier, seed },
+      };
+      setHistory(h => [entry, ...h].slice(0, 200));
+      setSpinning(false);
+    }, duration);
+  }
+
+  function resetHistory() {
+    setHistory([]);
+    localStorage.removeItem("rng_history_v1");
+  }
+
+  // quick stat snapshot
+  const stats = useMemo(() => {
+    const total = history.length;
+    const wins = history.filter(h => h.win).length;
+    const spent = history.reduce((s, h) => s + (h.bet || 0), 0);
+    const earned = history.reduce((s, h) => s + (h.payout || 0), 0);
+    return { total, wins, spent, earned, roi: total ? ((earned - spent) / spent) : 0 };
+  }, [history]);
+
+  // wheel animation angle
+  const spinAngle = useMemo(() => {
+    if (!result) return 0;
+    const slice = 360 / numOutcomes;
+    // aim so that the chosen slice lands at pointer (top)
+    const rndExtra = Math.floor(rng() * 360);
+    return 360 * (3 + Math.floor(rng() * 6)) + (result - 1) * slice + slice / 2 + rndExtra;
+    // multiple full rotations + offset
+    // note: we used rng() here to diversify final angle; acceptable for UI
+  }, [result, numOutcomes]);
+
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 to-slate-800 p-6">
+      <div className="w-full max-w-4xl bg-white/5 backdrop-blur-md rounded-2xl p-6 shadow-2xl border border-white/6">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h1 className="text-3xl font-extrabold text-white">RNG Lab</h1>
+            <p className="text-sm text-slate-300">Interactive RNG testing playground — The Giant loadout style vibes.</p>
+          </div>
+          <div className="text-right text-slate-300">
+            <div className="text-xs">Seed (optional)</div>
+            <input value={seed} onChange={e => setSeed(e.target.value)} placeholder="leave blank for random" className="mt-1 rounded-md bg-white/5 px-2 py-1 text-white text-sm" />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {/* Left: controls */}
+          <div className="col-span-1 bg-white/3 rounded-xl p-4">
+            <div className="mb-3">
+              <label className="text-sm text-slate-200">Number of outcomes</label>
+              <input type="range" min={2} max={12} value={numOutcomes} onChange={e => setNumOutcomes(Number(e.target.value))} className="w-full mt-2" />
+              <div className="text-xs text-slate-300 mt-1">{numOutcomes} outcomes</div>
+            </div>
+
+            <div className="mb-3">
+              <label className="text-sm text-slate-200">Bet amount</label>
+              <div className="flex items-center gap-2 mt-2">
+                <input type="number" value={betAmount} onChange={e => setBetAmount(Math.max(1, Number(e.target.value) || 1))} className="w-full rounded-md bg-white/5 px-2 py-1 text-white text-sm" />
+                <button onClick={() => setBetAmount(b => b + 10)} className="px-3 py-1 rounded-md bg-indigo-600 text-white text-sm">+10</button>
+              </div>
+            </div>
+
+            <div className="mb-3">
+              <label className="text-sm text-slate-200">Payout multiplier (win payout = bet * multiplier)</label>
+              <input type="range" min={1} max={20} value={payoutMultiplier} onChange={e => setPayoutMultiplier(Number(e.target.value))} className="w-full mt-2" />
+              <div className="text-xs text-slate-300 mt-1">x{payoutMultiplier}</div>
+            </div>
+
+            <div className="flex gap-2 mt-4">
+              <button onClick={playOnce} disabled={spinning} className={`flex-1 py-2 rounded-xl font-semibold ${spinning ? 'bg-slate-600' : 'bg-emerald-500 hover:bg-emerald-600'} text-white`}>SPIN</button>
+              <button onClick={() => setAutoplay(a => !a)} className={`px-4 py-2 rounded-xl font-semibold ${autoplay ? 'bg-rose-500' : 'bg-yellow-500'} text-white`}>{autoplay ? 'STOP' : 'AUTO'}</button>
+            </div>
+
+            <div className="mt-4 text-sm text-slate-300">
+              <div>Win condition: land <span className="font-semibold">{numOutcomes}</span> (rightmost outcome).</div>
+              <div className="mt-2">Expected chance: <span className="font-mono">1 / {numOutcomes}</span> ({((1/numOutcomes)*100).toFixed(2)}%)</div>
+            </div>
+
+            <div className="mt-4 border-t border-white/5 pt-3">
+              <div className="flex items-center justify-between text-slate-300 text-sm">
+                <div>History entries</div>
+                <div className="flex gap-2">
+                  <button onClick={() => setHistory([])} className="text-xs px-2 py-1 rounded bg-white/5">Clear</button>
+                  <button onClick={() => { localStorage.setItem('rng_history_export', JSON.stringify(history)); alert('History exported to localStorage key rng_history_export'); }} className="text-xs px-2 py-1 rounded bg-white/5">Export</button>
+                </div>
+              </div>
+              <div className="mt-2 text-xs text-slate-300 max-h-36 overflow-auto">
+                {history.length === 0 && <div className="text-slate-500">No runs yet</div>}
+                {history.map((h, idx) => (
+                  <div key={idx} className="flex items-center justify-between py-1 odd:bg-white/2 px-2 rounded">
+                    <div className="font-mono text-[13px]">#{history.length - idx} • {new Date(h.time).toLocaleTimeString()}</div>
+                    <div className="text-[13px]">{h.roll} {h.win ? <span className="text-emerald-400">WIN</span> : <span className="text-rose-400">LOSE</span>}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Middle: wheel */}
+          <div className="col-span-1 md:col-span-1 flex items-center justify-center">
+            <div className="relative">
+              <div className="absolute -top-10 left-1/2 -translate-x-1/2 text-center text-slate-200">pointer</div>
+              <div className="w-64 h-64 rounded-full bg-gradient-to-br from-slate-700 to-slate-900 p-4 flex items-center justify-center">
+                <div className="relative w-full h-full rounded-full bg-white/3 flex items-center justify-center">
+                  {/* spinning disc */}
+                  <motion.div
+                    animate={{ rotate: result ? spinAngle : 0 }}
+                    transition={{ duration: spinning ? 1.6 : 0.6, ease: "easeOut" }}
+                    className="absolute w-full h-full rounded-full flex items-center justify-center origin-center"
+                  >
+                    {/* segments */}
+                    <svg viewBox="0 0 200 200" className="w-full h-full rounded-full">
+                      <g transform="translate(100,100)">
+                        {wheelSegments.map((s, i) => {
+                          const angle = (360 / wheelSegments.length) * i;
+                          const large = wheelSegments.length;
+                          return (
+                            <g key={i} transform={`rotate(${angle})`}>
+                              <path d={`M0 0 L100 0 A100 100 0 0 1 ${Math.cos(Math.PI*2/large)*100} ${Math.sin(Math.PI*2/large)*100} Z`} fill={i % 2 === 0 ? 'rgba(255,255,255,0.03)' : 'rgba(255,255,255,0.06)'} stroke="rgba(255,255,255,0.06)" />
+                              <text x="58" y="6" transform="rotate(12)" fontSize="10" fill="#fff" opacity={0.9}>{s}</text>
+                            </g>
+                          )
+                        })}
+                      </g>
+                    </svg>
+                  </motion.div>
+
+                  {/* center label */}
+                  <div className="absolute flex-col items-center justify-center text-center">
+                    <div className="text-slate-200 font-bold text-lg">{result ? `Result: ${result}` : `Ready`}</div>
+                    {result && (
+                      <div className={`mt-1 text-sm ${history[0]?.win ? 'text-emerald-400' : 'text-rose-400'}`}>{history[0]?.win ? `Payout: ${history[0].payout}` : 'No payout'}</div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Right: stats */}
+          <div className="col-span-1 bg-white/3 rounded-xl p-4">
+            <h3 className="text-white font-semibold">Stats</h3>
+            <div className="mt-3 text-sm text-slate-300 grid grid-cols-2 gap-2">
+              <div className="p-2 bg-white/5 rounded">Runs<div className="text-xl font-bold">{stats.total}</div></div>
+              <div className="p-2 bg-white/5 rounded">Wins<div className="text-xl font-bold">{stats.wins}</div></div>
+              <div className="p-2 bg-white/5 rounded">Spent<div className="text-xl font-bold">{stats.spent}</div></div>
+              <div className="p-2 bg-white/5 rounded">Earned<div className="text-xl font-bold">{stats.earned}</div></div>
+              <div className="col-span-2 p-2 bg-white/5 rounded">ROI<div className="text-xl font-bold">{isFinite(stats.roi) ? (stats.roi * 100).toFixed(2) + '%' : '—'}</div></div>
+            </div>
+
+            <div className="mt-4">
+              <label className="text-sm text-slate-300">Autoplay interval</label>
+              <select className="mt-2 w-full rounded-md bg-white/5 px-2 py-1 text-white text-sm" onChange={e => {
+                const v = Number(e.target.value);
+                clearInterval(autoplayRef.current);
+                if (v === 0) setAutoplay(false);
+                else {
+                  setAutoplay(true);
+                  autoplayRef.current = setInterval(() => { if (!spinning) playOnce(); }, v);
+                }
+              }}>
+                <option value={0}>Off</option>
+                <option value={1200}>1.2s</option>
+                <option value={2000}>2.0s</option>
+                <option value={4000}>4.0s</option>
+              </select>
+            </div>
+
+            <div className="mt-4">
+              <button onClick={() => { navigator.clipboard?.writeText(JSON.stringify({history, settings:{numOutcomes}})); alert('Copied snapshot to clipboard') }} className="w-full py-2 rounded-xl bg-indigo-600 text-white font-semibold">Export Snapshot</button>
+            </div>
+
+            <div className="mt-4 text-xs text-slate-400">Tip: configure 'win condition' logic in the component if you want different win rules (e.g. specific ranges or parity).</div>
+
+          </div>
+        </div>
+      </div>
     </div>
-  </div>
-
-  <script>
-    window.onload = function() {
-      const planets = [
-        "Kepler-22b", "Kepler-452b", "Kepler-186f", "Proxima Centauri b", "TRAPPIST-1d",
-        "TRAPPIST-1e", "TRAPPIST-1f", "TRAPPIST-1g", "TRAPPIST-1h", "HD 40307g",
-        "Gliese 581g", "Gliese 667 Cc", "Gliese 581d", "Kepler-438b", "Kepler-442b",
-        "Tau Ceti e", "Tau Ceti f", "Wolf 1061c", "LHS 1140 b", "Ross 128 b",
-        "K2-18b", "Kepler-62f", "Kepler-69c", "Kepler-62e", "HD 85512b",
-        "GJ 667 Cb", "GJ 667 Cd", "Kepler-1652b", "Kepler-1229b", "Kapteyn b",
-        "Teegarden b", "Teegarden c", "Kepler-442b", "YZ Ceti d", "Kepler-1649c",
-        "GJ 273b", "HD 40307c", "HD 40307d", "HD 40307e", "HD 40307f",
-        "Gliese 876 d", "Gliese 876 c", "Gliese 876 b", "Kepler-10c", "Kepler-20f",
-        "Kepler-20e", "Kepler-22c", "Kepler-69b", "Kepler-62b", "Kepler-186d",
-        "Kepler-186c", "Kepler-62c", "Kepler-442c", "HD 219134b", "HD 219134c",
-        "Kepler-138b", "Kepler-138c", "Kepler-138d", "HD 20794c", "HD 20794d",
-        "HD 10180g", "HD 10180h", "HD 10180b", "HD 10180c", "HD 10180d",
-        "HD 10180e", "HD 10180f", "Kepler-37b", "Kepler-37c", "Kepler-37d",
-        "Luyten b", "55 Cancri e", "55 Cancri f", "55 Cancri d", "55 Cancri c",
-        "GJ 581e", "GJ 581c", "GJ 581b", "GJ 581f", "HD 69830c",
-        "HD 69830b", "HD 69830d", "HD 189733b", "HD 209458b", "CoRoT-7b",
-        "CoRoT-7c", "GJ 1214b", "HAT-P-11b", "HAT-P-26b", "HAT-P-7b",
-        "Kepler-5b", "Kepler-6b", "Kepler-7b", "Kepler-8b", "Kepler-9b",
-        "Kepler-9c", "Kepler-10b", "Kepler-11b", "Kepler-11c", "Kepler-11d",
-        
-        // New planets with over 1/1000 chance:
-        ...Array.from({ length: 100 }, (_, i) => `Planet-X-${i + 1}`)
-      ];
-
-      const weights = [
-        ...planets.slice(0, 50).map((_, index) => 1 / (5 + index)), // Higher chance for first 50 planets
-        ...planets.slice(50, 150).map((_, index) => 1 / (100 + index)), // Lower chance for next 100 planets
-        ...Array.from({ length: 100 }, () => 1 / 1000)  // Over 1/1000 chance for Planet-X planets
-      ];
-
-      const totalWeight = weights.reduce((a, b) => a + b, 0);
-
-      function weightedRandom() {
-        const r = Math.random() * totalWeight;
-        let sum = 0;
-        for (let i = 0; i < planets.length; i++) {
-          sum += weights[i];
-          if (r <= sum) return i;
-        }
-        return planets.length - 1;
-      }
-
-      function getRarity(index) {
-        if (index >= 150) return "Legendary"; // Planet-X planets are "Legendary"
-        if (index < 20) return "Epic";
-        if (index < 40) return "Rare";
-        if (index < 60) return "Uncommon";
-        return "Common";
-      }
-
-      function getOdds(index) {
-        const chance = weights[index] / totalWeight;
-        const oneIn = Math.round(1 / chance);
-        return `1 in ${oneIn}`;
-      }
-
-      const display = document.getElementById("planetDisplay");
-      const planetTable = document.getElementById("planetTable").getElementsByTagName('tbody')[0];
-
-      let inventory = [];
-
-      function updatePlanet() {
-        const index = weightedRandom();
-        const planet = planets[index];
-        const rarity = getRarity(index);
-        const odds = getOdds(index);
-
-        let planetText = `🪐 Currently Viewing: ${planet} [${rarity}, odds: ${odds}]`;
-
-        // Highlight logic based on rarity
-        let highlightClass = '';
-        if (rarity === "Legendary") {
-          highlightClass = "highlight-red"; // Red for legendary
-        } else if (rarity === "Epic") {
-          highlightClass = "highlight-blue"; // Blue for epic
-        } else if (rarity === "Rare") {
-          highlightClass = "highlight-green"; // Green for rare
-        } else if (weights[index] < 0.01) {
-          highlightClass = "highlight"; // Yellow for common
-        }
-
-        planetText = `<span class="${highlightClass}">${planetText}</span>`;
-
-        display.innerHTML = planetText;
-
-        const existingPlanet = inventory.find(item => item.planet === planet);
-        if (existingPlanet) {
-          existingPlanet.quantity += 1;
-        } else {
-          inventory.push({ planet, rarity, odds, quantity: 1 });
-        }
-
-        renderInventory();
-      }
-
-      function renderInventory() {
-        // Sort inventory based on rarity
-        inventory.sort((a, b) => {
-          const rarityOrder = { "Legendary": 4, "Epic": 3, "Rare": 2, "Uncommon": 1, "Common": 0 };
-          return rarityOrder[b.rarity] - rarityOrder[a.rarity]; // Descending order
-        });
-
-        planetTable.innerHTML = "";
-
-        inventory.forEach((item, index) => {
-          row = planetTable.insertRow();
-          row.innerHTML = `
-            <td>${item.planet}</td>
-            <td class="highlight-${item.rarity.toLowerCase()}">${item.rarity}</td>
-            <td>${item.odds}</td>
-            <td>${item.quantity}</td>
-            <td><button onclick="removePlanet(${index})">Remove</button></td>
-          `;
-        });
-      }
-
-      function removePlanet(index) {
-        inventory.splice(index, 1);
-        renderInventory();
-      }
-
-      setInterval(updatePlanet, 500);
-      updatePlanet();
-    };
-  </script>
-
-</body>
-</html>
+  );
+}
